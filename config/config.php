@@ -19,6 +19,9 @@ $config = [
         'env'       => 'production',
         // URL prefix of the app. null = auto-detect ('/lms-system' under XAMPP, '' at a domain root)
         'base_path' => null,
+        // Full public address, e.g. 'https://portali.shkolla.edu' — printed on login slips.
+        // null = taken from the current request.
+        'url'       => null,
         // Kosovo
         'timezone'  => 'Europe/Belgrade',
     ],

@@ -173,12 +173,17 @@ The user is re-loaded from the database on every request. Deactivating an accoun
 
 The school issues every account; the public site has **Hyr** only.
 
-- **Students** are created by the admin, either one at a time or by **CSV import into a class**: *emri, mbiemri*, plus optional e-mail and student number. The import enrols each student into the class for the current year.
+- **Students** are created by the admin one at a time and enrolled in their class for the current year. There is no spreadsheet import: the school decided against it.
 - **Teachers and admins** are created one at a time by an admin.
 - **Credentials.** For every new account the system generates:
   - a **username** from the name, lowercase and without diacritics (*Arta Gashi* → `arta.gashi`, then `arta.gashi2` on a clash). Students don't need an e-mail address to use the platform.
   - a readable **temporary password** (e.g. `lule-7-mali-42`), with `must_change_password = 1`.
-- **Handing credentials over.** Right after creation or import, the admin gets a **printable page of credential slips**, one per student, for the homeroom teacher to hand out. Passwords are stored only as hashes, so this page is shown **once**. Reprinting later means issuing a new temporary password, which also invalidates the old slip.
+- **Handing credentials over.** The admin issues **login slips** (*fletë hyrjeje*) in three ways:
+  - for one person, e.g. right after creating them;
+  - for a whole class, covering only the students who have not signed in yet;
+  - for every teacher who has no credentials yet.
+
+  The result is a **printable A4 page** (8 slips per page, with cut lines). Passwords are stored only as hashes. The plain temporary passwords are kept in the admin's own session for at most 30 minutes so the page can be printed, then they are gone. Reprinting means issuing new slips, which also makes the old ones invalid.
 - **First login.** The student must choose their own password before they can continue.
 - **Delivery by e-mail** is possible later, once the school provides an SMTP account.
 - **People without credentials.** A person can be recorded before they get a login: `users.password_hash` is `NULL`, and such a row can never sign in. The school's 80 teachers start this way. Issuing a login slip (T05) sets a temporary password.
@@ -298,8 +303,8 @@ Removing a teacher correctly un-assigned them and kept all marks.
 4. Build the timetable in the grid builder (conflict-checked).
 
 **W2 — Student onboarding**
-1. The admin imports a class list (CSV) or adds students one by one. Accounts are created active and enrolled in the class, each with a generated username and temporary password.
-2. The admin prints the credential slips; the homeroom teacher hands them out.
+1. The admin adds the students of a class. Accounts are created active and enrolled in the class, each with a generated username.
+2. The admin opens *Nxënësit* filtered by that class, issues the login slips for everyone who has not signed in yet, and prints them. The homeroom teacher hands them out.
 3. The student opens *Hyr*, signs in with the slip, and is asked to choose their own password.
 4. They land on *Paneli* and immediately see today's lessons, their subjects and teachers.
 
@@ -465,8 +470,10 @@ URLs are Albanian (without diacritics); code identifiers are English.
 | `/admin` | Paneli |
 | `/admin/perdoruesit` (+ `/krijo`, `/{id}/ndrysho`) | all users, status, roles, new temporary password |
 | `/admin/nxenesit` · `/admin/mesimdhenesit` | role-filtered views |
-| `/admin/nxenesit/importo` | CSV import of a class list |
-| `/admin/fletet-e-hyrjes` | one-time printable credential slips (after create / import / reset) |
+| `/admin/nxenesit/shto` · `/admin/mesimdhenesit/shto` · `/admin/perdoruesit/shto` | add a student · teacher · administrator |
+| `/admin/perdoruesit/{id}/ndrysho` | edit any account; issue a login slip; activate/deactivate |
+| POST `/admin/nxenesit/fletet` · `/admin/mesimdhenesit/fletet` | login slips for a class · for all teachers without credentials |
+| `/admin/fletet-e-hyrjes/{id}` | the printable slips (this admin's session only, 30 minutes) |
 | `/admin/vitet-shkollore` · `/admin/lendet` · `/admin/sallat` | years & terms · subjects · rooms |
 | `/admin/klasat` · `/admin/klasat/{id}` | classes · enrollments, subject/teacher assignment |
 | `/admin/orari` · `/admin/orari/oret` | timetable builder · bell schedule |
@@ -659,6 +666,7 @@ Greeting by hour: Mirëmëngjes (< 12:00) · Mirëdita (< 18:00) · Mirëmbrëma
 | Threat | Mitigation |
 |---|---|
 | SQL injection | PDO prepared statements only; `EMULATE_PREPARES=false`; ORDER BY / column names only from whitelists |
+| Malformed input | every query/body value is checked for valid UTF-8 in `Request`; invalid bytes are replaced before anything reaches the database, so odd clients get a normal validation message, never a 500 |
 | XSS | `e()` (`htmlspecialchars`, UTF-8, `ENT_QUOTES`) on all output; posts rendered by an escape-first formatter; strict **Content-Security-Policy** (no inline scripts or styles) |
 | CSRF | per-session token on every POST, checked centrally; logout is POST; `SameSite=Lax` cookies |
 | Broken access control | role guard per route group + ownership policies per object + authorised file streaming; 404 for others' objects |
@@ -693,7 +701,7 @@ Greeting by hour: Mirëmëngjes (< 12:00) · Mirëdita (< 18:00) · Mirëmbrëma
 
 - **Usernames.** Every account gets a generated username; the e-mail is optional. Login accepts either.
 - **Marks.** 1–5 with a teacher-decided term grade; averages equally weighted until the school sets weights.
-- **Shifts of the demo data.** X in the afternoon, XI and XII in the morning. This is an assumption until the school confirms which grades attend which shift.
+- **Shifts** (confirmed 27 Sep 2026): grade X attends the afternoon shift, XI and XII the morning shift.
 - **Shift per class.** Each class belongs to one shift. If classes switch shifts during the year, the admin changes the class's shift and the lesson times follow automatically (§9.1).
 
 ### Still open

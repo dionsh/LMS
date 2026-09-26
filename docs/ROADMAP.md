@@ -68,15 +68,26 @@ Legend: ✅ done · 🟡 partly done · 🔜 next · ⬜ planned
 
 ## Phase 2 — Admin: the school's structure
 
-- 🔜 **T05 · User management**
+- ✅ **T05 · User management** — **done 27 Sep 2026**: `tests/users_test.sh` passes 61/61.
+  - Verified:
+    - a student added through the form signs in with the password printed on the slip and must choose a new one;
+    - all 80 teachers get slips in one step (one log line, no passwords logged);
+    - class slips go only to students who have not signed in;
+    - slips are visible only in the issuing admin's session and disappear on "Mbaro";
+    - A4 print layout measured at 8 slips of 93 × 68 mm, content fitting;
+    - self-deactivation is blocked;
+    - malformed (non-UTF-8) input gives a normal 422, never a 500.
   - Deliverables:
-    - list, filter and search users; create students and teachers (generated username + temporary password)
-    - **CSV import of a class list** (preview, validation errors per row, then import)
-    - **one-time printable credential slips** after create / import / reset
-    - edit, activate/deactivate, issue a new temporary password
+    - list, filter, search and paginate users; add students, teachers and admins (generated username)
+    - **one-time printable login slips**: for one person, for a whole class (students not yet signed in), or for all teachers without credentials
+    - edit, activate/deactivate (never yourself, never the last admin), issue a new temporary password
     - teacher profile fields for the public staff page
-  - Done when: a 30-row CSV imports into a class, the slips print cleanly on A4, and an imported student can sign in and is forced to change their password.
-- ⬜ **T06 · Academic structure**
+    - (spreadsheet import dropped at the school's request)
+  - Done when:
+    - slips print cleanly on A4;
+    - a student added through the form can sign in with their slip and is forced to change the password;
+    - all 80 teachers can be given slips in one step.
+- 🔜 **T06 · Academic structure**
   - Deliverables:
     - years & terms (set current); subjects; rooms
     - classes (grade, section, stream, shift, homeroom teacher)

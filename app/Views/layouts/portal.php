@@ -29,7 +29,7 @@ $context = $context ?? Format::ucfirst(Format::date(new DateTimeImmutable(), 'lo
 <!doctype html>
 <html lang="sq">
 <head>
-<?= partial('partials/head', ['title' => $title ?? null, 'styles' => ['portal']]) ?>
+<?= partial('partials/head', ['title' => $title ?? null, 'styles' => array_merge(['portal'], $styles ?? [])]) ?>
 </head>
 <body>
     <a class="skip-link" href="#main">Kalo te përmbajtja</a>

@@ -39,10 +39,17 @@ $data = require __DIR__ . '/school-data.php';
 $year = AcademicYear::current() ?? exit("Mungon viti shkollor aktual (seed.sql).\n");
 $yearId = (int) $year['id'];
 
-/** The teacher's id — existing record reused, otherwise created without credentials. */
+/**
+ * The teacher's id — an existing record is reused untouched (edits made in the
+ * admin panel survive a re-run); otherwise it is created without credentials.
+ */
 $teacher = static function (string $first, string $last, bool $real): int {
     $existing = User::findByName('teacher', $first, $last);
-    $id = $existing !== null ? (int) $existing['id'] : User::create([
+    if ($existing !== null) {
+        return (int) $existing['id'];
+    }
+
+    $id = User::create([
         'role'       => 'teacher',
         'username'   => Usernames::suggest($first, $last),
         'first_name' => $first,

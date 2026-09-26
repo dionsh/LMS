@@ -16,8 +16,10 @@ declare(strict_types=1);
 use App\Controllers\Account\ProfileController;
 use App\Controllers\Admin\ClassController as AdminClasses;
 use App\Controllers\Admin\DashboardController as AdminDashboard;
+use App\Controllers\Admin\SlipController as AdminSlips;
 use App\Controllers\Admin\StudentController as AdminStudents;
 use App\Controllers\Admin\TeacherController as AdminTeachers;
+use App\Controllers\Admin\UserController as AdminUsers;
 use App\Controllers\Auth\LoginController;
 use App\Controllers\Auth\PasswordController;
 use App\Controllers\Dev\StyleGuideController;
@@ -73,8 +75,31 @@ $router->group(['prefix' => '/mesimdhenesi', 'middleware' => ['auth', 'password.
 $router->group(['prefix' => '/admin', 'middleware' => ['auth', 'password.changed', 'role:admin']], function (Router $r): void {
     $r->get('/', [AdminDashboard::class, 'index'], 'admin.dashboard');
     $r->get('/klasat', [AdminClasses::class, 'index'], 'admin.classes');
-    $r->get('/mesimdhenesit', [AdminTeachers::class, 'index'], 'admin.teachers');
+
+    // Students
     $r->get('/nxenesit', [AdminStudents::class, 'index'], 'admin.students');
+    $r->get('/nxenesit/shto', [AdminStudents::class, 'create'], 'admin.students.create');
+    $r->post('/nxenesit/shto', [AdminStudents::class, 'store'], 'admin.students.store');
+    $r->post('/nxenesit/fletet', [AdminStudents::class, 'issueForClass'], 'admin.students.slips');
+
+    // Teachers
+    $r->get('/mesimdhenesit', [AdminTeachers::class, 'index'], 'admin.teachers');
+    $r->get('/mesimdhenesit/shto', [AdminTeachers::class, 'create'], 'admin.teachers.create');
+    $r->post('/mesimdhenesit/shto', [AdminTeachers::class, 'store'], 'admin.teachers.store');
+    $r->post('/mesimdhenesit/fletet', [AdminTeachers::class, 'issueMissing'], 'admin.teachers.slips');
+
+    // Every account; administrators; the shared edit page
+    $r->get('/perdoruesit', [AdminUsers::class, 'index'], 'admin.users');
+    $r->get('/perdoruesit/shto', [AdminUsers::class, 'create'], 'admin.users.create');
+    $r->post('/perdoruesit/shto', [AdminUsers::class, 'store'], 'admin.users.store');
+    $r->get('/perdoruesit/{id:\d+}/ndrysho', [AdminUsers::class, 'edit'], 'admin.users.edit');
+    $r->post('/perdoruesit/{id:\d+}/ndrysho', [AdminUsers::class, 'update'], 'admin.users.update');
+    $r->post('/perdoruesit/{id:\d+}/fleta', [AdminUsers::class, 'issue'], 'admin.users.slip');
+    $r->post('/perdoruesit/{id:\d+}/statusi', [AdminUsers::class, 'status'], 'admin.users.status');
+
+    // Printable login slips (this admin's session only)
+    $r->get('/fletet-e-hyrjes/{batch:[a-f0-9]+}', [AdminSlips::class, 'show'], 'admin.slips');
+    $r->post('/fletet-e-hyrjes/{batch:[a-f0-9]+}/mbaro', [AdminSlips::class, 'finish'], 'admin.slips.finish');
 });
 
 // ---------------------------------------------------------------------

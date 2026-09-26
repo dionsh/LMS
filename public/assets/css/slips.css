@@ -1,0 +1,170 @@
+/*
+ * Login slips (fletë hyrjeje): cards on screen, 8 per A4 page when printed,
+ * with dashed cut lines. Black-and-white printers keep everything readable.
+ */
+
+.slips {
+    display: grid;
+    gap: var(--space-4);
+}
+
+@media (min-width: 48rem) {
+    .slips { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.slip {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-5);
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--radius);
+    background: var(--surface);
+    break-inside: avoid;
+}
+
+.slip__head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: var(--space-3);
+    align-items: center;
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--line);
+}
+
+.slip__mark {
+    grid-row: span 2;
+    width: 1.75rem;
+    height: 1.75rem;
+}
+
+.slip__school {
+    font-size: .8125rem;
+    font-weight: 700;
+}
+
+.slip__kind {
+    color: var(--brand-strong);
+    font-size: .6875rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.slip__name {
+    margin-top: var(--space-1);
+    font-family: var(--font-serif);
+    font-size: 1.375rem;
+    line-height: 1.15;
+}
+
+.slip__detail {
+    color: var(--ink-3);
+    font-size: .8125rem;
+}
+
+/* One row per credential: label left, value right — the password never wraps */
+.slip__credentials {
+    display: grid;
+    gap: var(--space-2);
+    margin: var(--space-2) 0;
+}
+
+.slip__credentials > div {
+    display: grid;
+    grid-template-columns: 9.5rem minmax(0, 1fr);
+    align-items: baseline;
+    gap: var(--space-3);
+}
+
+.slip__credentials dt {
+    color: var(--ink-3);
+    font-size: .6875rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.slip__value {
+    margin: 0;
+    justify-self: start;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+    font-size: 1rem;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.slip__password {
+    display: inline-block;
+    padding: .1rem .4rem;
+    border: 1px solid var(--ink);
+    border-radius: var(--radius-sm);
+}
+
+.slip__how {
+    margin-top: auto;
+    color: var(--ink-2);
+    font-size: .75rem;
+    line-height: 1.45;
+}
+
+.slip__how strong {
+    overflow-wrap: anywhere;
+}
+
+@media print {
+    @page {
+        size: A4;
+        margin: 10mm;
+    }
+
+    body {
+        background: #fff;
+    }
+
+    .sidebar,
+    .scrim,
+    .topbar,
+    .tabbar,
+    .skip-link,
+    .flash-stack,
+    .no-print {
+        display: none !important;
+    }
+
+    .portal {
+        display: block;
+    }
+
+    .portal__content {
+        max-width: none;
+        padding: 0;
+    }
+
+    /* 2 × 4 slips per page; the dashed borders are the cut lines */
+    .slips {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0;
+    }
+
+    /* Everything must fit 93 × 68.5 mm */
+    .slip {
+        height: 68.5mm;
+        gap: 1.2mm;
+        padding: 4mm 5mm;
+        overflow: hidden;
+        border-color: #888;
+        border-radius: 0;
+    }
+
+    .slip__head { padding-bottom: 2mm; }
+    .slip__mark { width: 6mm; height: 6mm; }
+    .slip__name { margin-top: 0; font-size: 13pt; }
+    .slip__detail { font-size: 8pt; }
+    .slip__credentials { gap: 1.5mm; margin: 1mm 0; }
+    .slip__credentials > div { grid-template-columns: 30mm minmax(0, 1fr); gap: 2mm; }
+    .slip__credentials dt { font-size: 6.5pt; }
+    .slip__value { font-size: 10.5pt; }
+    .slip__password { padding: .3mm 1.5mm; }
+    .slip__how { font-size: 7pt; }
+}

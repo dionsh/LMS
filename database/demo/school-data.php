@@ -15,7 +15,7 @@ declare(strict_types=1);
  */
 
 return [
-    // Shift per grade (1 = paradite, 2 = pasdite) — an assumption until the school confirms
+    // Shift per grade (1 = paradite, 2 = pasdite) — confirmed by the school
     'shifts' => [10 => 2, 11 => 1, 12 => 1],
 
     // Real homeroom teachers: [first name, last name, grade, section]

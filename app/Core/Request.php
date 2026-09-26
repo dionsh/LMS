@@ -63,11 +63,27 @@ final class Request
             strtoupper($method),
             $normalized,
             $normalized !== '/' && str_ends_with($path, '/'),
-            $query,
-            $body,
+            self::validUtf8($query),
+            self::validUtf8($body),
             $files,
             $server,
         );
+    }
+
+    /**
+     * Browsers send UTF-8, but a broken or hostile client might not. Invalid
+     * byte sequences are replaced ("?") so they can never reach the database
+     * (which would reject them with an error) or the page.
+     */
+    private static function validUtf8(array $values): array
+    {
+        array_walk_recursive($values, static function (mixed &$value): void {
+            if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) {
+                $value = mb_scrub($value, 'UTF-8');
+            }
+        });
+
+        return $values;
     }
 
     public function isGet(): bool

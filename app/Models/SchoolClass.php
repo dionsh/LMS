@@ -43,6 +43,24 @@ final class SchoolClass extends Model
         );
     }
 
+    /** Classes of a year for <select> lists: [['id', 'grade_level', 'section'], …] */
+    public static function optionsForYear(int $academicYearId): array
+    {
+        return self::fetchAll(
+            'SELECT id, grade_level, section FROM classes WHERE academic_year_id = ? ORDER BY grade_level, section',
+            [$academicYearId]
+        );
+    }
+
+    /** The class, only if it belongs to the given year (validates ids coming from forms). */
+    public static function findInYear(int $classId, int $academicYearId): ?array
+    {
+        return self::fetchOne(
+            'SELECT id, grade_level, section, shift FROM classes WHERE id = ? AND academic_year_id = ?',
+            [$classId, $academicYearId]
+        );
+    }
+
     public static function setHomeroomTeacher(int $classId, ?int $teacherId): void
     {
         self::execute('UPDATE classes SET homeroom_teacher_id = ? WHERE id = ?', [$teacherId, $classId]);

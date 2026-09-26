@@ -21,4 +21,10 @@ final class Enrollment extends Model
             [$studentId, $classId]
         );
     }
+
+    /** Take a student out of their class for a year (e.g. transferred to another school). */
+    public static function remove(int $studentId, int $academicYearId): void
+    {
+        self::execute('DELETE FROM enrollments WHERE student_id = ? AND academic_year_id = ?', [$studentId, $academicYearId]);
+    }
 }

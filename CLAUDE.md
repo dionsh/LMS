@@ -29,6 +29,7 @@ A school website plus an LMS (student / teacher / admin) in plain PHP 8.2 + Mari
 - Role guards live on route groups in `app/routes.php`. Every ID taken from a URL is checked by a Policy, returning 404 when it isn't the user's.
 - New role pages go inside the matching route group (`auth`, `password.changed`, `role:…`) and their controllers extend `PortalController` (use `$this->page()`). Object access goes through a `Policy` (`Policy::authorize()` → 404).
 - Forms: validate with `Core/Validator`, show errors with `field_error()` / `field_invalid()`. Passwords go through `Services/PasswordPolicy`.
+- Account changes go through `Services/Accounts` (logged in `activity_log`); passwords are issued only through `Services/Credentials` (login slips via `SlipStore`, never logged or stored in plain text). Admin lists use `User::search()` + `Support/Paginator` + `partials/pagination`.
 - Tests live in `tests/`. Run all three (see `tests/README.md`) before committing, and add checks for new features. Local test logins: `php database/demo/test-accounts.php` (listed in `database/demo/README.md`).
 - Private files go in `storage/` and are streamed after a policy check. `public/uploads/` is for public images only.
 - No inline `<script>`/`style=""` (strict CSP); use CSS classes and `public/assets/js`.

@@ -41,9 +41,9 @@ CREATE TABLE settings (
 -- 2. People
 -- ---------------------------------------------------------------------
 
--- There is no self sign-up: every account is created by the school
--- (students individually or by CSV import), with a generated username
--- and a temporary password that must be changed at first login.
+-- There is no self sign-up: every account is created by the school's
+-- admin, one at a time, with a generated username and a temporary
+-- password (printed on a login slip) that must be changed at first login.
 -- Login accepts the username or, when present, the e-mail address.
 -- A person can also exist WITHOUT sign-in credentials (password_hash
 -- NULL), e.g. staff recorded before their login slip is handed out;

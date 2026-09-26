@@ -19,7 +19,7 @@ Running the script again restores these passwords and clears their failed sign-i
 Loads the 2026/2027 structure from `school-data.php`. It is safe to run again; nothing is duplicated.
 
 - **45 classes**, X/1–XII/15, each with a homeroom teacher (*kujdestar*).
-  - The shift per grade is an assumption until the school confirms it: X in the afternoon, XI and XII in the morning.
+  - Shifts (confirmed by the school): X in the afternoon, XI and XII in the morning.
 - **80 teachers**, stored as records **without sign-in credentials**. They can't sign in until the admin issues a login slip (T05).
   - XII/1–XII/5 have the school's real homeroom teachers: Enver Bajrami, Hysnije Mustafa, Dhurata Sahiti, Behar Krasniqi and Avni Hashani.
   - The other 75 names are **placeholders**. They are hidden from the public website (`show_on_website = 0`) and will be replaced by the real staff list.

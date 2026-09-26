@@ -19,4 +19,13 @@ final class StudentProfile extends Model
             [$userId, $dateOfBirth, $gender, $studentNumber]
         );
     }
+
+    /** Is this student number (numri i amzës) already used by another student? */
+    public static function numberTaken(string $studentNumber, ?int $exceptUserId = null): bool
+    {
+        return self::fetchValue(
+            'SELECT 1 FROM student_profiles WHERE student_number = ? AND user_id <> ?',
+            [$studentNumber, $exceptUserId ?? 0]
+        ) !== null;
+    }
 }

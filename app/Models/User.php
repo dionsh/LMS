@@ -69,6 +69,139 @@ final class User extends Model
         self::execute('UPDATE users SET email = ?, phone = ? WHERE id = ?', [$email, $phone, $id]);
     }
 
+    /** Names and contact details (admin editing an account). */
+    public static function updateDetails(int $id, string $firstName, string $lastName, ?string $email, ?string $phone): void
+    {
+        self::execute(
+            'UPDATE users SET first_name = ?, last_name = ?, email = ?, phone = ? WHERE id = ?',
+            [$firstName, $lastName, $email, $phone, $id]
+        );
+    }
+
+    public static function countActiveAdmins(): int
+    {
+        return (int) self::fetchValue("SELECT COUNT(*) FROM users WHERE role = 'admin' AND status = 'active'");
+    }
+
+    /**
+     * Everything the admin edit page shows about one account: user, profile,
+     * the student's class this year, the teacher's homeroom class this year.
+     */
+    public static function details(int $id, int $academicYearId): ?array
+    {
+        return self::fetchOne(
+            'SELECT u.id, u.role, u.username, u.first_name, u.last_name, u.email, u.phone, u.status,
+                    u.must_change_password, u.last_login_at, u.created_at,
+                    u.password_hash IS NOT NULL AS has_credentials,
+                    sp.student_number, sp.date_of_birth, sp.gender,
+                    tp.title, tp.specialization, tp.bio, tp.show_on_website,
+                    sc.id AS class_id, sc.grade_level AS class_grade, sc.section AS class_section,
+                    hc.id AS homeroom_class_id, hc.grade_level AS homeroom_grade, hc.section AS homeroom_section
+               FROM users u
+               LEFT JOIN student_profiles sp ON sp.user_id = u.id
+               LEFT JOIN teacher_profiles tp ON tp.user_id = u.id
+               LEFT JOIN enrollments en ON en.student_id = u.id AND en.academic_year_id = :year1
+               LEFT JOIN classes sc ON sc.id = en.class_id
+               LEFT JOIN classes hc ON hc.homeroom_teacher_id = u.id AND hc.academic_year_id = :year2
+              WHERE u.id = :id',
+            ['year1' => $academicYearId, 'year2' => $academicYearId, 'id' => $id]
+        );
+    }
+
+    /**
+     * Searchable, filterable account lists for the admin.
+     *
+     * @param array{role?: string, q?: string, status?: string, class_id?: int,
+     *              credentials?: 'none'|'issued', never_signed_in?: bool} $filters
+     */
+    public static function search(int $academicYearId, array $filters, int $limit, int $offset): array
+    {
+        [$where, $params] = self::searchConditions($filters);
+
+        $order = match ($filters['role'] ?? null) {
+            'student' => 'sc.grade_level IS NULL, sc.grade_level, sc.section, u.last_name, u.first_name',
+            'teacher' => 'u.last_name, u.first_name',
+            default   => "FIELD(u.role, 'admin', 'teacher', 'student'), u.last_name, u.first_name",
+        };
+
+        return self::fetchAll(
+            'SELECT u.id, u.role, u.first_name, u.last_name, u.username, u.email, u.status, u.last_login_at,
+                    u.password_hash IS NOT NULL AS has_credentials,
+                    tp.title,
+                    sc.id AS class_id, sc.grade_level AS class_grade, sc.section AS class_section,
+                    hc.id AS homeroom_class_id, hc.grade_level AS homeroom_grade, hc.section AS homeroom_section
+               FROM users u
+               LEFT JOIN teacher_profiles tp ON tp.user_id = u.id
+               LEFT JOIN enrollments en ON en.student_id = u.id AND en.academic_year_id = :year1
+               LEFT JOIN classes sc ON sc.id = en.class_id
+               LEFT JOIN classes hc ON hc.homeroom_teacher_id = u.id AND hc.academic_year_id = :year2
+              WHERE ' . $where . '
+              ORDER BY ' . $order . '
+              LIMIT :limit OFFSET :offset',
+            $params + ['year1' => $academicYearId, 'year2' => $academicYearId, 'limit' => $limit, 'offset' => $offset]
+        );
+    }
+
+    public static function countSearch(int $academicYearId, array $filters): int
+    {
+        [$where, $params] = self::searchConditions($filters);
+
+        return (int) self::fetchValue(
+            'SELECT COUNT(*)
+               FROM users u
+               LEFT JOIN enrollments en ON en.student_id = u.id AND en.academic_year_id = :year1
+               LEFT JOIN classes sc ON sc.id = en.class_id
+              WHERE ' . $where,
+            $params + ['year1' => $academicYearId]
+        );
+    }
+
+    /**
+     * WHERE clause for search()/countSearch(). Only fixed SQL fragments are
+     * concatenated; every value is a bound parameter.
+     *
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    private static function searchConditions(array $filters): array
+    {
+        $where = ['1 = 1'];
+        $params = [];
+
+        if (isset($filters['role']) && in_array($filters['role'], ['admin', 'teacher', 'student'], true)) {
+            $where[] = 'u.role = :role';
+            $params['role'] = $filters['role'];
+        }
+
+        if (isset($filters['status']) && in_array($filters['status'], ['active', 'inactive'], true)) {
+            $where[] = 'u.status = :status';
+            $params['status'] = $filters['status'];
+        }
+
+        if (isset($filters['class_id'])) {
+            $where[] = 'sc.id = :class_id';
+            $params['class_id'] = (int) $filters['class_id'];
+        }
+
+        if (($filters['credentials'] ?? null) === 'none') {
+            $where[] = 'u.password_hash IS NULL';
+        } elseif (($filters['credentials'] ?? null) === 'issued') {
+            $where[] = 'u.password_hash IS NOT NULL';
+        }
+
+        if (!empty($filters['never_signed_in'])) {
+            $where[] = 'u.last_login_at IS NULL';
+        }
+
+        $q = trim((string) ($filters['q'] ?? ''));
+        if ($q !== '') {
+            $like = '%' . addcslashes($q, '\\%_') . '%';
+            $where[] = "(CONCAT(u.first_name, ' ', u.last_name) LIKE :q1 OR u.username LIKE :q2 OR u.email LIKE :q3)";
+            $params += ['q1' => $like, 'q2' => $like, 'q3' => $like];
+        }
+
+        return [implode(' AND ', $where), $params];
+    }
+
     public static function usernameExists(string $username): bool
     {
         return self::fetchValue('SELECT 1 FROM users WHERE username = ?', [$username]) !== null;

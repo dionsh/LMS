@@ -247,7 +247,27 @@
         }, { passive: true });
     }
 
+    /* ------------------------------------------------------------------
+     * <button data-print> opens the browser's print dialog
+     * ------------------------------------------------------------------ */
+    function initPrint() {
+        document.addEventListener('click', function (event) {
+            if (event.target.closest('[data-print]')) window.print();
+        });
+    }
+
+    /* ------------------------------------------------------------------
+     * After a form comes back with errors, put the cursor in the first
+     * field that needs attention
+     * ------------------------------------------------------------------ */
+    function initFocusFirstError() {
+        const invalid = document.querySelector('main [aria-invalid="true"]');
+        if (invalid && !document.querySelector('[autofocus]')) invalid.focus();
+    }
+
     initToggles();
+    initPrint();
+    initFocusFirstError();
     initDropdowns();
     initTabs();
     initDismiss();

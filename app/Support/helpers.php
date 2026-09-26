@@ -41,6 +41,24 @@ function url(string $path = '/', array $query = []): string
     return $query === [] ? $url : $url . '?' . http_build_query($query);
 }
 
+/**
+ * Full URL including scheme and host, e.g. for the address printed on a login
+ * slip: absolute_url('/hyr') → 'http://localhost/lms-system/hyr'.
+ * Set app.url in config on the live server to fix the host.
+ */
+function absolute_url(string $path = '/'): string
+{
+    $configured = Config::get('app.url');
+
+    if (is_string($configured) && $configured !== '') {
+        return rtrim($configured, '/') . '/' . ltrim($path, '/');
+    }
+
+    $host = (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
+
+    return (is_https() ? 'https://' : 'http://') . $host . url($path);
+}
+
 /** URL of a named route: route('news.show', ['slug' => $post['slug']]). */
 function route(string $name, array $params = [], array $query = []): string
 {
