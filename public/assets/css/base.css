@@ -127,8 +127,8 @@ dd {
     margin: 0;
 }
 
-ul[role="list"],
-ol[role="list"] {
+/* :where() keeps this reset at zero specificity, so any component class can set its own spacing */
+:where(ul[role="list"], ol[role="list"]) {
     margin: 0;
     padding: 0;
     list-style: none;
@@ -337,6 +337,19 @@ hr {
 
 @media (min-width: 64rem) {
     .grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* Stat tiles: short numbers fit two per row even on phones */
+.grid--stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+}
+
+@media (min-width: 64rem) {
+    .grid--stats {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: var(--space-5);
+    }
 }
 
 /* ---------------------------------------------------------------- accessibility */

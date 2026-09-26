@@ -15,7 +15,12 @@ Plain PHP 8.2 + MySQL/MariaDB via PDO: no framework, no Composer packages.
    C:\xampp_ick\mysql\bin\mysql.exe -u root --default-character-set=utf8mb4 kuvendi_lms -e "source C:/xampp_ick/htdocs/lms-system/database/schema.sql; source C:/xampp_ick/htdocs/lms-system/database/seed.sql;"
    ```
 3. Copy `config/config.local.example.php` to `config/config.local.php` and adjust the database credentials if needed.
-4. Open <http://localhost/lms-system/>. In development there are also two reference pages:
+4. Create the school's first administrator. The script prints a username and a one-time temporary password, which must be changed at first sign-in:
+   ```
+   C:\xampp_ick\php\php.exe database/create-admin.php
+   ```
+   For local testing, `php database/demo/test-accounts.php` creates one test login per role (see `database/demo/README.md`). Never run it on the live server.
+5. Open <http://localhost/lms-system/>. In development there are also two reference pages:
    - <http://localhost/lms-system/_sistemi>: a checklist of the environment (PHP, database, time zone, folders, CSRF).
    - <http://localhost/lms-system/_stilet>: the design system (colours with live contrast checks, type, every component, the portal and sign-in shells).
 
@@ -30,5 +35,6 @@ Fonts: Newsreader and Manrope are self-hosted under the SIL Open Font License (s
 | `config/` | configuration (`config.local.php` holds this machine's credentials and is not committed) |
 | `database/` | `schema.sql`, `seed.sql` |
 | `storage/` | private files: uploaded homework, logs (never web-reachable) |
+| `tests/` | automated tests (see `tests/README.md`) |
 | `docs/` | architecture and roadmap |
 | `images/` | original brand files supplied by the school (source only; web versions live in `public/assets/img/`) |

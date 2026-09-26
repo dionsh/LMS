@@ -53,15 +53,6 @@ final class StyleGuideController extends Controller
         ], 'portal');
     }
 
-    /** The sign-in layout. ?gabim shows the error state. */
-    public function auth(): Response
-    {
-        return $this->view('dev/auth-demo', [
-            'title'     => 'Hyr',
-            'showError' => $this->request->query('gabim') !== null,
-        ], 'auth');
-    }
-
     /** @return list<string> symbol ids in the icon sprite */
     private static function iconNames(): array
     {

@@ -4,10 +4,14 @@
  * full-screen menu used on phones and tablets.
  */
 
+use App\Core\Auth;
 use App\Models\AcademicYear;
 use App\Support\Navigation;
 
 $navigation = Navigation::site();
+$signedIn = Auth::check();
+$portalUrl = url($signedIn ? Auth::homePath() : '/hyr');
+$portalLabel = $signedIn ? 'Paneli im' : 'Hyr';
 $path = current_path();
 $phone = setting('school_phone');
 $email = setting('school_email');
@@ -26,7 +30,7 @@ $year = AcademicYear::current();
                 <span>Viti shkollor <?= e($year['name']) ?></span>
             <?php endif; ?>
         </div>
-        <a class="utility-bar__portal" href="<?= e(url('/hyr')) ?>">Portali mësimor <?= icon('arrow-right', 'icon--sm') ?></a>
+        <a class="utility-bar__portal" href="<?= e($portalUrl) ?>">Portali mësimor <?= icon('arrow-right', 'icon--sm') ?></a>
     </div>
 </div>
 
@@ -45,7 +49,7 @@ $year = AcademicYear::current();
         </nav>
 
         <div class="masthead__actions">
-            <a class="btn btn--secondary btn--sm" href="<?= e(url('/hyr')) ?>"><?= icon('user', 'icon--sm') ?>Hyr</a>
+            <a class="btn btn--secondary btn--sm" href="<?= e($portalUrl) ?>"><?= icon($signedIn ? 'dashboard' : 'user', 'icon--sm') ?><?= e($portalLabel) ?></a>
             <button class="menu-toggle" type="button" data-toggle="site-menu" aria-controls="site-menu" aria-expanded="false">
                 <?= icon('menu') ?>Menyja
             </button>
@@ -70,7 +74,7 @@ $year = AcademicYear::current();
     </ul>
 
     <div class="site-menu__footer">
-        <a class="btn btn--on-ink btn--block" href="<?= e(url('/hyr')) ?>"><?= icon('user', 'icon--sm') ?>Hyr në portal</a>
+        <a class="btn btn--on-ink btn--block" href="<?= e($portalUrl) ?>"><?= icon($signedIn ? 'dashboard' : 'user', 'icon--sm') ?><?= $signedIn ? 'Paneli im' : 'Hyr në portal' ?></a>
         <?php if ($phone !== ''): ?><span><?= e($phone) ?></span><?php endif; ?>
         <?php if ($email !== ''): ?><span><?= e($email) ?></span><?php endif; ?>
     </div>

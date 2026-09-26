@@ -27,6 +27,9 @@ A school website plus an LMS (student / teacher / admin) in plain PHP 8.2 + Mari
 - All output is escaped with `e()`. Post bodies are rendered only through `PostFormatter`, and raw HTML is never stored.
 - Every POST carries the CSRF token, and nothing changes state on GET.
 - Role guards live on route groups in `app/routes.php`. Every ID taken from a URL is checked by a Policy, returning 404 when it isn't the user's.
+- New role pages go inside the matching route group (`auth`, `password.changed`, `role:…`) and their controllers extend `PortalController` (use `$this->page()`). Object access goes through a `Policy` (`Policy::authorize()` → 404).
+- Forms: validate with `Core/Validator`, show errors with `field_error()` / `field_invalid()`. Passwords go through `Services/PasswordPolicy`.
+- Tests live in `tests/`. Run all three (see `tests/README.md`) before committing, and add checks for new features. Local test logins: `php database/demo/test-accounts.php` (listed in `database/demo/README.md`).
 - Private files go in `storage/` and are streamed after a policy check. `public/uploads/` is for public images only.
 - No inline `<script>`/`style=""` (strict CSP); use CSS classes and `public/assets/js`.
 - Use the design tokens from ARCHITECTURE §11 (`public/assets/css/tokens.css`). Don't introduce new colours or fonts ad hoc. Any new colour pair goes into the contrast table on `/_stilet`, and it must pass.

@@ -64,6 +64,25 @@ final class Session
         unset($_SESSION[$key]);
     }
 
+    /** Read a value and remove it. */
+    public static function pull(string $key, mixed $default = null): mixed
+    {
+        $value = $_SESSION[$key] ?? $default;
+        unset($_SESSION[$key]);
+
+        return $value;
+    }
+
+    /**
+     * Empty the session and move it to a new id (the old one is deleted).
+     * Used on logout and when a signed-in account is no longer valid.
+     */
+    public static function clear(): void
+    {
+        $_SESSION = [];
+        self::regenerate();
+    }
+
     /** New session id, same data — call on login, logout and privilege changes. */
     public static function regenerate(): void
     {

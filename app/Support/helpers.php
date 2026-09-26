@@ -95,6 +95,32 @@ function csrf_field(): string
     return '<input type="hidden" name="_token" value="' . e(Csrf::token()) . '">';
 }
 
+/**
+ * The error message under a form field (empty when the field is valid).
+ * Its id "{field}-error" is referenced by field_invalid().
+ */
+function field_error(array $errors, string $field): string
+{
+    if (!isset($errors[$field])) {
+        return '';
+    }
+
+    return '<p class="field__error" id="' . e($field) . '-error">' . icon('alert', 'icon--sm') . e($errors[$field]) . '</p>';
+}
+
+/**
+ * Attributes marking an input invalid and linking it to its error (and optional hint):
+ *   <input … <?= field_invalid($errors, 'email', 'email-hint') ?>>
+ */
+function field_invalid(array $errors, string $field, string $alsoDescribedBy = ''): string
+{
+    if (!isset($errors[$field])) {
+        return '';
+    }
+
+    return ' aria-invalid="true" aria-describedby="' . e(trim($field . '-error ' . $alsoDescribedBy)) . '"';
+}
+
 /** Previously submitted form value (after a validation redirect). */
 function old(string $key, string $default = ''): string
 {

@@ -528,6 +528,37 @@ a.item__title:hover { color: var(--brand-strong); }
     font-size: var(--text-sm);
 }
 
+/* Label/value pairs (account details, record summaries) */
+.details {
+    display: grid;
+    margin: 0;
+}
+
+.details > div {
+    display: grid;
+    grid-template-columns: minmax(7rem, 40%) minmax(0, 1fr);
+    gap: var(--space-4);
+    padding-block: var(--space-3);
+    border-top: 1px solid var(--line);
+}
+
+.details > div:first-child {
+    padding-top: 0;
+    border-top: 0;
+}
+
+.details dt {
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+    font-weight: 600;
+}
+
+.details dd {
+    margin: 0;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
 /* ================================================================ headings for sections & pages */
 
 .section-head {
@@ -996,6 +1027,7 @@ a.item__title:hover { color: var(--brand-strong); }
 
 .stat {
     display: grid;
+    align-content: start;
     gap: var(--space-1);
     padding: var(--space-5);
     border: 1px solid var(--line);

@@ -72,7 +72,7 @@ $today = 5; // the demo is set on a Friday
         </p>
         <div class="cluster sg-intro__actions">
             <a class="btn btn--primary" href="<?= e(route('dev.portal')) ?>">Portali (shembull) <?= icon('arrow-right') ?></a>
-            <a class="btn btn--secondary" href="<?= e(route('dev.auth')) ?>">Faqja e hyrjes</a>
+            <a class="btn btn--secondary" href="<?= e(route('login')) ?>">Faqja e hyrjes</a>
             <a class="btn btn--quiet" href="<?= e(route('dev.system')) ?>">Gjendja e sistemit</a>
         </div>
         <nav class="sg-toc" aria-label="Seksionet">
@@ -312,7 +312,7 @@ $today = 5; // the demo is set on a Friday
 <section class="section" id="kartat">
     <div class="container stack--lg">
         <header class="section-head"><h2 class="section-head__title">Kartat, listat, statistikat</h2></header>
-        <div class="grid grid--4">
+        <div class="grid grid--stats">
             <div class="stat"><span class="stat__label">Nxënës aktivë</span><span class="stat__value">1 284</span><span class="stat__meta">45 klasa</span></div>
             <div class="stat"><span class="stat__label">Mësimdhënës</span><span class="stat__value">86</span><span class="stat__meta">2 ndërrime</span></div>
             <div class="stat"><span class="stat__label">Detyra këtë javë</span><span class="stat__value">132</span><span class="stat__meta">+18 nga java e kaluar</span></div>

@@ -10,10 +10,12 @@
  * @var string|null  $context  short text in the top bar (default: today's date)
  */
 
+use App\Core\Auth;
 use App\Support\Format;
 use App\Support\Labels;
 use App\Support\Navigation;
 
+$user = $user ?? Auth::user();
 $role = $user['role'];
 $fullName = $user['first_name'] . ' ' . $user['last_name'];
 $initials = Format::initials($user['first_name'], $user['last_name']);

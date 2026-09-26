@@ -85,6 +85,7 @@ lms-system/
 │   ├── uploads/assignments/   # teacher materials
 │   ├── uploads/submissions/   # student work
 │   └── logs/
+├── tests/                     # router, database-constraint and HTTP end-to-end tests (see tests/README.md)
 └── docs/                      # ARCHITECTURE.md, ROADMAP.md, later TESTING.md, DEPLOYMENT.md
 ```
 
@@ -186,7 +187,10 @@ The school issues every account; the public site has **Hyr** only.
 - **Login.** The user signs in with their **username or e-mail** and password. On failure they always see the same message, *"Emri i përdoruesit ose fjalëkalimi është i pasaktë."*, so the form doesn't reveal which accounts exist.
 - **Hashing.** Passwords are stored with `password_hash()` (`PASSWORD_DEFAULT`) and checked with `password_verify()`. `password_needs_rehash()` upgrades old hashes transparently.
 - **Password rules.** At least 8 characters, not equal to the username or e-mail, different from the temporary password, and the confirmation must match.
-- **Brute-force protection** (`login_attempts`): ≥ 5 failures for one identifier, or ≥ 20 from one IP, within 15 minutes → temporary lock with a clear message.
+- **Brute-force protection** (`login_attempts`, `Services/Authenticator`):
+  - 5 failures for one account within 15 minutes lock that account until the window passes. The lock message says when to try again, and a successful sign-in resets the count.
+  - The per-IP limit is deliberately high, **100 failures in 15 minutes**: a whole class signs in through the school's single Wi-Fi address, and a few typos from thirty students must never lock everyone out.
+  - Unknown accounts are rejected as slowly as wrong passwords (a dummy hash is checked), so timing does not reveal which usernames exist.
 - **Forgotten password.** The admin issues a new temporary password (a new slip). E-mail-based reset is a later option, once the school has SMTP.
 - **Inactive accounts** cannot log in; they see an explanatory message.
 
@@ -594,7 +598,7 @@ Every module has a designed empty state in plain Albanian — e.g. *"Nuk keni de
 | Behaviour | `public/assets/js/app.js`: menus/drawer, dropdowns, tabs, confirm dialog, busy buttons, password toggle, reveal. Everything works without it. |
 | Navigation menus | `app/Support/Navigation.php` (site, portal per role, phone tab bar) |
 | Shared view pieces | `app/Views/partials/` (head, brand, site header/footer, flash, confirm dialog, timetable day/week) |
-| Reference | `/_stilet` (style guide with live contrast and font checks), `/_stilet/portali?roli=nxenes\|mesimdhenes\|admin`, `/_stilet/hyrja` (development only) |
+| Reference | `/_stilet` (style guide with live contrast and font checks), `/_stilet/portali?roli=nxenes\|mesimdhenes\|admin` (development only). The sign-in screens are the real `/hyr` and `/ndrysho-fjalekalimin`. |
 
 **Breakpoints in use:**
 - 480 px: the sign-in button in the header folds into the menu.
@@ -679,6 +683,10 @@ Greeting by hour: Mirëmëngjes (< 12:00) · Mirëdita (< 18:00) · Mirëmbrëma
 4. **Bell schedule.** Two shifts of six 45-minute lessons. The morning starts at 08:00 and the afternoon at 14:00. Breaks are 5 minutes, except two 10-minute main breaks after the 2nd and the 4th lesson (seeded in `lesson_periods`).
 5. **School structure.** Three grades — X, XI, XII — with about 15 classes each, written **X/13, XI/5, XII/1**. That is ≈ 45 classes and well over a thousand students, so every admin list is searchable, filterable by grade and class, and paginated. Every class has a *kujdestar* (homeroom teacher).
 6. **Terminology:** *Ballina*, *Mësimdhënësit*, *Dil*, and *Njoftimet* (announcements) vs *Lajmërimet* (personal notifications).
+7. **Brand assets.**
+   - `images/logo1.png` is the only logo file; no vector original exists. The SVG mark rebuilt from it (§11.9) is the logo used everywhere.
+   - There are no higher-resolution photos of the school. The public site therefore leads with typography and the logo's line motif. The one photo (640×480) appears only behind dark overlays, never as a sharp full-bleed image.
+   - The sign-in slogan *"Dija ndërtohet bashkë."* is approved for now.
 
 ### Design defaults (change any time)
 

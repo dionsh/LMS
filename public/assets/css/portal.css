@@ -319,6 +319,35 @@
     margin-top: var(--space-8);
 }
 
+.profile-note {
+    margin-top: var(--space-5);
+}
+
+/* Admin: school setup checklist */
+.setup-list {
+    margin-top: var(--space-6);
+}
+
+/* Label stays beside its icon; the badge moves below on narrow screens */
+.setup-list > li {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+}
+
+.setup-list .cluster {
+    flex-wrap: nowrap;
+}
+
+.setup-list__icon {
+    display: inline-flex;
+    color: var(--ink-3);
+}
+
+.setup-list__icon.is-done {
+    color: var(--success);
+}
+
 /* Development demo helpers (/_stilet/portali) */
 .portal-demo-note { margin-bottom: var(--space-6); }
 .portal-demo-note a[aria-current="page"] { color: var(--ink); font-weight: 700; text-decoration: none; }

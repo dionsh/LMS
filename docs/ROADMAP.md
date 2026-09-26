@@ -30,7 +30,7 @@ Legend: ✅ done · 🔜 next · ⬜ planned
     - an unknown URL shows the Albanian 404;
     - `/lms-system/app/…`, `/config/…` and `/storage/…` are refused;
     - the DB connection and time zone are verified.
-- ✅ **T03 · Design system & layouts** — **done 26 Sep 2026**. Style guide at `/_stilet`, portal demo at `/_stilet/portali`, sign-in demo at `/_stilet/hyrja` (development only).
+- ✅ **T03 · Design system & layouts** — **done 26 Sep 2026**. Style guide at `/_stilet`, portal demo at `/_stilet/portali` (development only).
   - Verified:
     - 20/20 colour pairs pass WCAG AA, computed live from `tokens.css`;
     - fonts load from our own server, with tabular figures;
@@ -45,7 +45,16 @@ Legend: ✅ done · 🔜 next · ⬜ planned
     - three layout shells: public site, auth, portal (sidebar + phone tab bar)
     - a dev-only style-guide page
   - Done when: every component renders at 375 px and 1440 px, and the contrast pairs pass AA.
-- 🔜 **T04 · Authentication & roles**
+- ✅ **T04 · Authentication & roles** — **done 27 Sep 2026**: `tests/auth_test.sh` passes 71/71 over real HTTP.
+  - Verified:
+    - every role is shut out of the other areas (403) and guests are sent to *Hyr*;
+    - the session id changes at sign-in; portal pages are `no-store`; POSTs without a token are refused;
+    - wrong password and unknown account give the same answer;
+    - the 6th attempt is locked, while other accounts on the same network keep working;
+    - a deactivated user is out on their next click;
+    - temporary passwords must be replaced;
+    - profile e-mail/phone are validated and unique.
+  - `database/create-admin.php` tested end to end.
   - Deliverables:
     - *Hyr* (username or e-mail) and *Dil*; no sign-up page
     - hardened sessions, login throttling, role guards, ownership-policy base
@@ -59,7 +68,7 @@ Legend: ✅ done · 🔜 next · ⬜ planned
 
 ## Phase 2 — Admin: the school's structure
 
-- ⬜ **T05 · User management**
+- 🔜 **T05 · User management**
   - Deliverables:
     - list, filter and search users; create students and teachers (generated username + temporary password)
     - **CSV import of a class list** (preview, validation errors per row, then import)
