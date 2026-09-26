@@ -1,0 +1,16 @@
+# Local configuration (credentials)
+/config/config.local.php
+
+# Runtime data: logs and uploaded files
+/storage/logs/*
+/storage/uploads/assignments/*
+/storage/uploads/submissions/*
+/public/uploads/*
+!.gitkeep
+!/public/uploads/.htaccess
+
+# OS / editor files
+Thumbs.db
+.DS_Store
+.vscode/
+.idea/

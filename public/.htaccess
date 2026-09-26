@@ -1,0 +1,12 @@
+# Real files (CSS, JS, images, public uploads) are served directly;
+# every other URL goes to the front controller.
+Options -Indexes -MultiViews
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+
+    RewriteRule ^ index.php [L]
+</IfModule>

@@ -1,0 +1,12 @@
+# ---------------------------------------------------------------------
+# Only public/ is served. Every request is handed to public/, so
+# app/, config/, database/, storage/ and docs/ can never be reached
+# from a browser (each of those folders also denies access itself).
+# In production, point the domain's document root at public/ directly.
+# ---------------------------------------------------------------------
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

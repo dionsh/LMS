@@ -1,0 +1,2 @@
+# Not web-accessible. Everything the browser needs is served from public/.
+Require all denied

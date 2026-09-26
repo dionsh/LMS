@@ -1,0 +1,15 @@
+# Public uploads (post covers, staff photos) are images only.
+# Nothing in here may ever be executed or interpreted as a script.
+Options -Indexes -ExecCGI
+
+<FilesMatch "(?i)\.(php\d?|phtml|phar|pht|cgi|pl|py|sh|shtml|html?|svg|htaccess)$">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>

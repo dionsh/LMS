@@ -1,0 +1,12 @@
+# Store text files with LF line endings, whatever OS they were edited on
+# (the production server will be Linux).
+* text=auto eol=lf
+
+# Binary assets
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.jfif  binary
+*.webp  binary
+*.ico   binary
+*.woff2 binary
