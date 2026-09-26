@@ -67,6 +67,13 @@ final class Labels
         'inactive' => 'Joaktiv',
     ];
 
+    /** Grade level → Roman numeral used in class labels (X/13, XI/5, XII/1). */
+    public const GRADE_ROMAN = [
+        10 => 'X',
+        11 => 'XI',
+        12 => 'XII',
+    ];
+
     public const SHIFTS = [
         1 => 'Paradite',
         2 => 'Pasdite',

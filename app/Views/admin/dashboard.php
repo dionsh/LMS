@@ -27,7 +27,7 @@ $done = count(array_filter($setup, static fn (array $step): bool => $step[2]));
     <div class="stat">
         <span class="stat__label">Pa hyrë asnjëherë</span>
         <span class="stat__value"><?= e(sq_number($neverSigned)) ?></span>
-        <span class="stat__meta">Fleta e hyrjes ende e papërdorur</span>
+        <span class="stat__meta"><?= $withoutCredentials > 0 ? 'Prej tyre ' . e(sq_number($withoutCredentials)) . ' pa fletë hyrjeje' : 'Fleta e hyrjes ende e papërdorur' ?></span>
     </div>
 </div>
 

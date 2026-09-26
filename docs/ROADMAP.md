@@ -6,7 +6,7 @@ The order differs slightly from a plain feature list, for two reasons:
 - the **design system comes early**, so every page is built on it rather than restyled later;
 - the **admin's school structure comes before teacher/student features**, because teachers and students can only see classes, subjects and timetables once they exist.
 
-Legend: ✅ done · 🔜 next · ⬜ planned
+Legend: ✅ done · 🟡 partly done · 🔜 next · ⬜ planned
 
 ---
 
@@ -81,7 +81,11 @@ Legend: ✅ done · 🔜 next · ⬜ planned
     - years & terms (set current); subjects; rooms
     - classes (grade, section, stream, shift, homeroom teacher)
     - enrol and move students; assign subject → teacher per class
-- ⬜ **T07 · Demo school data**
+- 🟡 **T07 · Demo school data** — **part done 27 Sep 2026** (brought forward at the school's request):
+  - `database/demo/school.php` loads 45 classes, 80 teachers (records without credentials; the real XII/1–5 homeroom teachers plus placeholders) and 10 student accounts in X/13, XI/5 and XII/1.
+  - Read-only admin lists: *Klasat*, *Mësimdhënësit*, *Nxënësit*. Students see their class and homeroom teacher on their dashboard.
+  - `tests/school_data_test.sh` passes 26/26.
+  - Still to come with T06/T08: subjects per class, the timetable, sample work.
   - Deliverable: `database/demo/` with a realistic test school (a few classes, ~8 teachers, ~60 students, timetable, sample work) so every later task can be tested properly. Test logins are recorded there, not in chat.
 - ⬜ **T08 · Timetable & bell schedule**
   - Deliverables:

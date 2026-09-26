@@ -14,7 +14,10 @@ declare(strict_types=1);
  */
 
 use App\Controllers\Account\ProfileController;
+use App\Controllers\Admin\ClassController as AdminClasses;
 use App\Controllers\Admin\DashboardController as AdminDashboard;
+use App\Controllers\Admin\StudentController as AdminStudents;
+use App\Controllers\Admin\TeacherController as AdminTeachers;
 use App\Controllers\Auth\LoginController;
 use App\Controllers\Auth\PasswordController;
 use App\Controllers\Dev\StyleGuideController;
@@ -69,6 +72,9 @@ $router->group(['prefix' => '/mesimdhenesi', 'middleware' => ['auth', 'password.
 
 $router->group(['prefix' => '/admin', 'middleware' => ['auth', 'password.changed', 'role:admin']], function (Router $r): void {
     $r->get('/', [AdminDashboard::class, 'index'], 'admin.dashboard');
+    $r->get('/klasat', [AdminClasses::class, 'index'], 'admin.classes');
+    $r->get('/mesimdhenesit', [AdminTeachers::class, 'index'], 'admin.teachers');
+    $r->get('/nxenesit', [AdminStudents::class, 'index'], 'admin.students');
 });
 
 // ---------------------------------------------------------------------

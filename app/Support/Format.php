@@ -71,6 +71,18 @@ final class Format
         };
     }
 
+    /** 12, 1 → "XII/1" — the only way a class label is written. */
+    public static function classLabel(int $gradeLevel, int $section): string
+    {
+        return (Labels::GRADE_ROMAN[$gradeLevel] ?? (string) $gradeLevel) . '/' . $section;
+    }
+
+    /** "Prof. Enver Bajrami" (title only when present). */
+    public static function personName(?string $title, string $firstName, string $lastName): string
+    {
+        return trim(($title !== null && $title !== '' ? $title . ' ' : '') . $firstName . ' ' . $lastName);
+    }
+
     /** "Arta", "Gashi" → "AG" (avatars). */
     public static function initials(string $firstName, string $lastName): string
     {

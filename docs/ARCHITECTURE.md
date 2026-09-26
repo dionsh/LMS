@@ -181,6 +181,7 @@ The school issues every account; the public site has **Hyr** only.
 - **Handing credentials over.** Right after creation or import, the admin gets a **printable page of credential slips**, one per student, for the homeroom teacher to hand out. Passwords are stored only as hashes, so this page is shown **once**. Reprinting later means issuing a new temporary password, which also invalidates the old slip.
 - **First login.** The student must choose their own password before they can continue.
 - **Delivery by e-mail** is possible later, once the school provides an SMTP account.
+- **People without credentials.** A person can be recorded before they get a login: `users.password_hash` is `NULL`, and such a row can never sign in. The school's 80 teachers start this way. Issuing a login slip (T05) sets a temporary password.
 
 ### 6.2 Login & passwords
 
@@ -692,6 +693,7 @@ Greeting by hour: Mirëmëngjes (< 12:00) · Mirëdita (< 18:00) · Mirëmbrëma
 
 - **Usernames.** Every account gets a generated username; the e-mail is optional. Login accepts either.
 - **Marks.** 1–5 with a teacher-decided term grade; averages equally weighted until the school sets weights.
+- **Shifts of the demo data.** X in the afternoon, XI and XII in the morning. This is an assumption until the school confirms which grades attend which shift.
 - **Shift per class.** Each class belongs to one shift. If classes switch shifts during the year, the admin changes the class's shift and the lesson times follow automatically (§9.1).
 
 ### Still open

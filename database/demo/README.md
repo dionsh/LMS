@@ -14,4 +14,37 @@
 
 Running the script again restores these passwords and clears their failed sign-in attempts.
 
+## School structure (`php database/demo/school.php`)
+
+Loads the 2026/2027 structure from `school-data.php`. It is safe to run again; nothing is duplicated.
+
+- **45 classes**, X/1–XII/15, each with a homeroom teacher (*kujdestar*).
+  - The shift per grade is an assumption until the school confirms it: X in the afternoon, XI and XII in the morning.
+- **80 teachers**, stored as records **without sign-in credentials**. They can't sign in until the admin issues a login slip (T05).
+  - XII/1–XII/5 have the school's real homeroom teachers: Enver Bajrami, Hysnije Mustafa, Dhurata Sahiti, Behar Krasniqi and Avni Hashani.
+  - The other 75 names are **placeholders**. They are hidden from the public website (`show_on_website = 0`) and will be replaced by the real staff list.
+- **10 student accounts**, all with the password **`Nxenes-Demo-2026`**:
+
+| Username | Name | Class |
+|---|---|---|
+| `ariana.gashi` | Ariana Gashi | XII/1 |
+| `blend.hoxha` | Blend Hoxha | XII/1 |
+| `diellza.morina` | Diellza Morina | XII/1 |
+| `lorik.berisha` | Lorik Berisha | XII/1 |
+| `erion.shala` | Erion Shala | XI/5 |
+| `era.kelmendi` | Era Kelmendi | XI/5 |
+| `rron.bytyqi` | Rron Bytyqi | XI/5 |
+| `dea.hasani` | Dea Hasani | X/13 |
+| `leart.krasniqi` | Leart Krasniqi | X/13 |
+| `albiona.rexhepi` | Albiona Rexhepi | X/13 |
+
+Rebuild everything from scratch (development only):
+
+```
+C:\xampp_ick\mysql\bin\mysql.exe -u root -e "DROP DATABASE IF EXISTS kuvendi_lms; CREATE DATABASE kuvendi_lms CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+C:\xampp_ick\mysql\bin\mysql.exe -u root --default-character-set=utf8mb4 kuvendi_lms -e "source database/schema.sql; source database/seed.sql;"
+C:\xampp_ick\php\php.exe database/demo/test-accounts.php
+C:\xampp_ick\php\php.exe database/demo/school.php
+```
+
 The school's real first administrator is created with `php database/create-admin.php` instead. That script generates a username and a one-time temporary password.

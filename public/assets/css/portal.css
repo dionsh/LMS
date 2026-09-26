@@ -323,6 +323,15 @@
     margin-top: var(--space-5);
 }
 
+/* Admin list pages */
+.admin-section + .admin-section {
+    margin-top: var(--space-8);
+}
+
+.admin-note {
+    margin-bottom: var(--space-6);
+}
+
 /* Admin: school setup checklist */
 .setup-list {
     margin-top: var(--space-6);

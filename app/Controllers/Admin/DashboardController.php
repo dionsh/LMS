@@ -19,20 +19,23 @@ final class DashboardController extends PortalController
         $year = AcademicYear::current();
         $users = User::countActiveByRole();
         $classes = $year !== null ? SchoolClass::countForYear((int) $year['id']) : 0;
+        $withHomeroom = $year !== null ? SchoolClass::countWithHomeroom((int) $year['id']) : 0;
         $periods = count(LessonPeriod::forShift(1)) + count(LessonPeriod::forShift(2));
 
         return $this->page('admin/dashboard', [
-            'title'       => 'Paneli',
-            'year'        => $year,
-            'users'       => $users,
-            'classes'     => $classes,
-            'neverSigned' => User::countNeverSignedIn(),
-            'setup'       => [
+            'title'              => 'Paneli',
+            'year'               => $year,
+            'users'              => $users,
+            'classes'            => $classes,
+            'neverSigned'        => User::countNeverSignedIn(),
+            'withoutCredentials' => User::countWithoutCredentials(),
+            'setup'              => [
                 ['Viti shkollor', $year !== null ? $year['name'] : 'Mungon', $year !== null],
                 ['Orari i orëve', $periods . ' orë në dy ndërrime', $periods > 0],
-                ['Mësimdhënësit', $users['teacher'] . ' llogari', $users['teacher'] > 0],
+                ['Mësimdhënësit', $users['teacher'] . ' mësimdhënës', $users['teacher'] > 0],
                 ['Klasat', $classes . ' klasa', $classes > 0],
-                ['Nxënësit', $users['student'] . ' llogari', $users['student'] > 0],
+                ['Kujdestarët e klasave', $withHomeroom . ' nga ' . $classes . ' klasa', $classes > 0 && $withHomeroom === $classes],
+                ['Nxënësit', $users['student'] . ' nxënës', $users['student'] > 0],
             ],
         ], 'dashboard');
     }

@@ -82,9 +82,19 @@ final class User extends Model
         ) !== null;
     }
 
+    /** A person of a role by exact name (used to keep data imports from creating duplicates). */
+    public static function findByName(string $role, string $firstName, string $lastName): ?array
+    {
+        return self::fetchOne(
+            'SELECT ' . self::PUBLIC_COLUMNS . ' FROM users WHERE role = ? AND first_name = ? AND last_name = ? LIMIT 1',
+            [$role, $firstName, $lastName]
+        );
+    }
+
     /**
      * @param array{role: string, username: string, first_name: string, last_name: string,
-     *              email?: ?string, password: string, status?: string, must_change_password?: bool} $data
+     *              email?: ?string, password: ?string, status?: string, must_change_password?: bool} $data
+     *              password null = a record without sign-in credentials (cannot sign in yet)
      */
     public static function create(array $data): int
     {
@@ -97,7 +107,7 @@ final class User extends Model
                 'first_name'    => $data['first_name'],
                 'last_name'     => $data['last_name'],
                 'email'         => $data['email'] ?? null,
-                'password_hash' => password_hash($data['password'], PASSWORD_DEFAULT),
+                'password_hash' => $data['password'] === null ? null : password_hash($data['password'], PASSWORD_DEFAULT),
                 'status'        => $data['status'] ?? 'active',
                 'must_change'   => $data['must_change_password'] ?? true,
             ]
@@ -117,9 +127,51 @@ final class User extends Model
         return $counts;
     }
 
-    /** Active accounts that have never signed in (their credential slip has not been used yet). */
+    /** Active people who have never signed in (no slip issued yet, or slip not used yet). */
     public static function countNeverSignedIn(): int
     {
         return (int) self::fetchValue("SELECT COUNT(*) FROM users WHERE status = 'active' AND last_login_at IS NULL");
+    }
+
+    /** Active people who have no sign-in credentials yet. */
+    public static function countWithoutCredentials(): int
+    {
+        return (int) self::fetchValue("SELECT COUNT(*) FROM users WHERE status = 'active' AND password_hash IS NULL");
+    }
+
+    /**
+     * Every teacher with the class they are homeroom teacher of in the given year (if any).
+     * has_credentials = 0 means a record without sign-in credentials.
+     */
+    public static function teachersOverview(int $academicYearId): array
+    {
+        return self::fetchAll(
+            'SELECT u.id, u.first_name, u.last_name, u.username, u.status, u.last_login_at,
+                    u.password_hash IS NOT NULL AS has_credentials,
+                    tp.title,
+                    c.id AS homeroom_class_id, c.grade_level, c.section
+               FROM users u
+               LEFT JOIN teacher_profiles tp ON tp.user_id = u.id
+               LEFT JOIN classes c ON c.homeroom_teacher_id = u.id AND c.academic_year_id = :year
+              WHERE u.role = :role
+              ORDER BY u.last_name, u.first_name',
+            ['year' => $academicYearId, 'role' => 'teacher']
+        );
+    }
+
+    /** Every student with their class in the given year (if enrolled). */
+    public static function studentsOverview(int $academicYearId): array
+    {
+        return self::fetchAll(
+            'SELECT u.id, u.first_name, u.last_name, u.username, u.status, u.last_login_at,
+                    u.password_hash IS NOT NULL AS has_credentials,
+                    c.id AS class_id, c.grade_level, c.section
+               FROM users u
+               LEFT JOIN enrollments en ON en.student_id = u.id AND en.academic_year_id = :year
+               LEFT JOIN classes c ON c.id = en.class_id
+              WHERE u.role = :role
+              ORDER BY c.grade_level IS NULL, c.grade_level, c.section, u.last_name, u.first_name',
+            ['year' => $academicYearId, 'role' => 'student']
+        );
     }
 }

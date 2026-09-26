@@ -45,6 +45,9 @@ CREATE TABLE settings (
 -- (students individually or by CSV import), with a generated username
 -- and a temporary password that must be changed at first login.
 -- Login accepts the username or, when present, the e-mail address.
+-- A person can also exist WITHOUT sign-in credentials (password_hash
+-- NULL), e.g. staff recorded before their login slip is handed out;
+-- such a row can never sign in until the admin issues a password.
 CREATE TABLE users (
   id                   INT UNSIGNED NOT NULL AUTO_INCREMENT,
   role                 ENUM('admin','teacher','student') NOT NULL,
@@ -52,7 +55,7 @@ CREATE TABLE users (
   first_name           VARCHAR(60)  NOT NULL,
   last_name            VARCHAR(60)  NOT NULL,
   email                VARCHAR(190) NULL,               -- optional; stored lowercase
-  password_hash        VARCHAR(255) NOT NULL,           -- password_hash(PASSWORD_DEFAULT)
+  password_hash        VARCHAR(255) NULL,               -- password_hash(PASSWORD_DEFAULT); NULL = no credentials issued yet
   phone                VARCHAR(30)  NULL,
   avatar_path          VARCHAR(255) NULL,               -- relative to public/uploads/
   status               ENUM('active','inactive') NOT NULL DEFAULT 'active',
