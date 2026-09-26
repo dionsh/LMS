@@ -10,6 +10,8 @@ namespace App\Core;
  */
 final class Request
 {
+    private static ?self $current = null;
+
     private function __construct(
         public readonly string $method,
         public readonly string $path,
@@ -21,9 +23,10 @@ final class Request
     ) {
     }
 
+    /** The request being handled by this PHP process (also available to layouts via current_path()). */
     public static function capture(): self
     {
-        return self::create(
+        return self::$current = self::create(
             $_SERVER['REQUEST_METHOD'] ?? 'GET',
             (string) (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/'),
             $_GET,
@@ -31,6 +34,11 @@ final class Request
             $_FILES,
             $_SERVER,
         );
+    }
+
+    public static function current(): ?self
+    {
+        return self::$current;
     }
 
     /** Also used by tests and CLI scripts to build a request by hand. */

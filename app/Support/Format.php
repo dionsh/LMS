@@ -71,6 +71,12 @@ final class Format
         };
     }
 
+    /** "Arta", "Gashi" → "AG" (avatars). */
+    public static function initials(string $firstName, string $lastName): string
+    {
+        return mb_strtoupper(mb_substr(trim($firstName), 0, 1) . mb_substr(trim($lastName), 0, 1));
+    }
+
     /** Uppercase the first letter, UTF-8 safe: "e premte" → "E premte". */
     public static function ucfirst(string $value): string
     {

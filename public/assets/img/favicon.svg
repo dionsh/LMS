@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-labelledby="title">
+  <title id="title">Gjimnazi “Kuvendi i Arbërit”</title>
+  <!-- The logo mark: a teal square cut by three lines. Line positions and
+       thickness were measured from the school's logo (images/logo1.png);
+       the lines are cut out, so the background shows through them. -->
+  <defs>
+    <mask id="kai-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
+      <rect width="100" height="100" fill="#fff"/>
+      <g stroke="#000" stroke-width="3.4" fill="none">
+        <line x1="22.92" y1="-10" x2="135.43" y2="110"/>
+        <line x1="52.29" y1="-10" x2="1.40" y2="110"/>
+        <line x1="-10" y1="97.03" x2="110" y2="55.85"/>
+      </g>
+    </mask>
+  </defs>
+  <rect width="100" height="100" fill="#009EB4" mask="url(#kai-cut)"/>
+</svg>

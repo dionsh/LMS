@@ -502,6 +502,8 @@ That gives the whole identity: **one confident colour, white space, straight lin
 
 **Semantic colours** are used only for status, always with an icon and a word, never colour alone: success `#2F7A55`, warning `#9A6A00`, danger `#B3261E`, info = brand.
 
+**Focus and state indicators** use `--focus` = `--brand-strong` (4.7:1 on paper). The pure logo teal measures 2.99:1 on paper, just under the 3:1 minimum for non-text indicators. This was found by the live contrast check in the style guide.
+
 **Colour rules**
 - Teal is the primary colour. Clay appears on **< 5 % of any screen** and **never** in status or feedback UI, so it can't be confused with "danger".
 - Teal text on the dark ink background passes (4.9:1), so the brand colour works on both light and dark sections.
@@ -577,6 +579,28 @@ Every module has a designed empty state in plain Albanian — e.g. *"Nuk keni de
   - every input has a `<label>` and errors are tied to their field;
   - WCAG AA contrast (checked above);
   - status is never conveyed by colour alone.
+
+### 11.9 Where the design system lives (built in T03)
+
+| What | Where |
+|---|---|
+| Tokens (every colour, size, spacing, motion value) | `public/assets/css/tokens.css` |
+| Fonts (`@font-face`), reset, type roles, utilities | `public/assets/css/base.css`; files in `public/assets/fonts/` (SIL OFL, licences alongside) |
+| Components (buttons, forms, tables, badges, grades, alerts, tabs, timetable, dialog, menus…) | `public/assets/css/components.css` |
+| Layout shells | `site.css` (public), `auth.css` (sign-in), `portal.css` (sidebar, top bar, tab bar, dashboard grid) |
+| Logo mark | `public/assets/img/brand/mark.svg`: rebuilt from the logo with measured line positions and thickness; the wordmark is set in Manrope next to it (`partials/brand.php`). If the school has the original vector logo, it can replace the mark 1:1. |
+| Motif | `public/assets/img/brand/lines.svg`, used as a CSS mask (`.motif`), so any colour works |
+| Icons | `public/assets/img/icons.svg` sprite (one line family), via the `icon('name')` helper |
+| Behaviour | `public/assets/js/app.js`: menus/drawer, dropdowns, tabs, confirm dialog, busy buttons, password toggle, reveal. Everything works without it. |
+| Navigation menus | `app/Support/Navigation.php` (site, portal per role, phone tab bar) |
+| Shared view pieces | `app/Views/partials/` (head, brand, site header/footer, flash, confirm dialog, timetable day/week) |
+| Reference | `/_stilet` (style guide with live contrast and font checks), `/_stilet/portali?roli=nxenes\|mesimdhenes\|admin`, `/_stilet/hyrja` (development only) |
+
+**Breakpoints in use:**
+- 480 px: the sign-in button in the header folds into the menu.
+- 768 px: the week grid replaces the day tabs, and the phone tab bar hides.
+- 1024 px: the desktop navigation and portal sidebar appear.
+- 1200 px: dashboard modules sit side by side next to the sidebar.
 
 ---
 

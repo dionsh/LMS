@@ -1,0 +1,140 @@
+/*
+ * Sign-in screens: the school on the left, the form on the right.
+ * On phones the photo becomes a short band above the form.
+ */
+
+.auth {
+    display: grid;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: var(--paper);
+}
+
+@media (min-width: 64rem) {
+    .auth { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
+}
+
+/* ---------------------------------------------------------------- visual side */
+
+.auth__visual {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: var(--space-6);
+    min-height: 11rem;
+    overflow: hidden;
+    padding: var(--space-5) var(--gutter);
+    background: var(--ink);
+    color: var(--on-ink);
+}
+
+.auth__photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: .42;
+    filter: grayscale(.2);
+}
+
+.auth__visual::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(13, 37, 48, .35) 0%, rgba(13, 37, 48, .92) 100%);
+}
+
+.auth__lines {
+    position: absolute;
+    inset: -10% -25% -10% 10%;
+    z-index: 1;
+    color: rgba(0, 158, 180, .45);
+    pointer-events: none;
+}
+
+/* Content above the photo, overlay and lines (which stay absolutely positioned) */
+.auth__visual > .brand,
+.auth__statement {
+    position: relative;
+    z-index: 2;
+}
+
+.auth__statement {
+    display: none;
+}
+
+@media (min-width: 64rem) {
+    .auth__visual {
+        position: sticky;
+        top: 0;
+        height: 100dvh;
+        padding: var(--space-7) var(--space-8);
+    }
+
+    .auth__statement {
+        display: grid;
+        gap: var(--space-4);
+        max-width: 28rem;
+    }
+}
+
+.auth__statement p:first-child {
+    font-family: var(--font-serif);
+    font-size: var(--text-2xl);
+    line-height: 1.1;
+    letter-spacing: var(--tracking-display);
+}
+
+.auth__statement p:last-child {
+    color: var(--on-ink-2);
+}
+
+/* ---------------------------------------------------------------- form side */
+
+.auth__panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: var(--space-7) var(--gutter);
+}
+
+.auth__form {
+    display: grid;
+    gap: var(--space-6);
+    width: 100%;
+    max-width: 25rem;
+    margin-inline: auto;
+}
+
+.auth__title {
+    font-size: var(--text-2xl);
+}
+
+.auth__intro {
+    margin-top: var(--space-2);
+    color: var(--ink-2);
+}
+
+.auth__help {
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--line);
+    color: var(--ink-3);
+    font-size: var(--text-sm);
+}
+
+.auth__back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-5);
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.auth__back:hover { color: var(--brand-strong); }
+
+.auth__note { margin-top: var(--space-3); }

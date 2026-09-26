@@ -29,5 +29,7 @@ A school website plus an LMS (student / teacher / admin) in plain PHP 8.2 + Mari
 - Role guards live on route groups in `app/routes.php`. Every ID taken from a URL is checked by a Policy, returning 404 when it isn't the user's.
 - Private files go in `storage/` and are streamed after a policy check. `public/uploads/` is for public images only.
 - No inline `<script>`/`style=""` (strict CSP); use CSS classes and `public/assets/js`.
-- Use the design tokens from ARCHITECTURE §11. Don't introduce new colours or fonts ad hoc.
+- Use the design tokens from ARCHITECTURE §11 (`public/assets/css/tokens.css`). Don't introduce new colours or fonts ad hoc. Any new colour pair goes into the contrast table on `/_stilet`, and it must pass.
+- Build pages from existing components (`components.css`) and partials. Icons come via `icon('name')`, never emoji. Layouts: `site`, `auth`, `portal` (the portal expects `$user`, `$active`, `$unread`).
+- Components must not depend on the HTML tag they sit on (e.g. `.hero__title` sets its own font).
 - Schema changes: edit `database/schema.sql` until launch; afterwards add numbered files in `database/migrations/`.

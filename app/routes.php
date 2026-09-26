@@ -11,6 +11,7 @@ declare(strict_types=1);
  * - All POST routes are CSRF-protected automatically by the router.
  */
 
+use App\Controllers\Dev\StyleGuideController;
 use App\Controllers\Dev\SystemController;
 use App\Controllers\Site\HomeController;
 use App\Core\Router;
@@ -28,4 +29,8 @@ $router->get('/', [HomeController::class, 'index'], 'home');
 if (config('app.env') === 'development') {
     $router->get('/_sistemi', [SystemController::class, 'index'], 'dev.system');
     $router->post('/_sistemi/csrf', [SystemController::class, 'csrfCheck'], 'dev.csrf');
+
+    $router->get('/_stilet', [StyleGuideController::class, 'index'], 'dev.styleguide');
+    $router->get('/_stilet/portali', [StyleGuideController::class, 'portal'], 'dev.portal');
+    $router->get('/_stilet/hyrja', [StyleGuideController::class, 'auth'], 'dev.auth');
 }

@@ -30,7 +30,14 @@ Legend: ✅ done · 🔜 next · ⬜ planned
     - an unknown URL shows the Albanian 404;
     - `/lms-system/app/…`, `/config/…` and `/storage/…` are refused;
     - the DB connection and time zone are verified.
-- 🔜 **T03 · Design system & layouts**
+- ✅ **T03 · Design system & layouts** — **done 26 Sep 2026**. Style guide at `/_stilet`, portal demo at `/_stilet/portali`, sign-in demo at `/_stilet/hyrja` (development only).
+  - Verified:
+    - 20/20 colour pairs pass WCAG AA, computed live from `tokens.css`;
+    - fonts load from our own server, with tabular figures;
+    - no horizontal scroll at 375 px; every touch target ≥ 44 px;
+    - drawer and menu handle focus and Esc correctly;
+    - no CSP violations.
+  - Fixed during review: the focus ring and active-state underlines moved to the stronger teal (the logo teal is 2.99:1 on paper).
   - Deliverables:
     - tokens (§11.2–11.3), base styles and components (§11.5)
     - logo mark as crisp SVG and the line motif
@@ -38,7 +45,7 @@ Legend: ✅ done · 🔜 next · ⬜ planned
     - three layout shells: public site, auth, portal (sidebar + phone tab bar)
     - a dev-only style-guide page
   - Done when: every component renders at 375 px and 1440 px, and the contrast pairs pass AA.
-- ⬜ **T04 · Authentication & roles**
+- 🔜 **T04 · Authentication & roles**
   - Deliverables:
     - *Hyr* (username or e-mail) and *Dil*; no sign-up page
     - hardened sessions, login throttling, role guards, ownership-policy base

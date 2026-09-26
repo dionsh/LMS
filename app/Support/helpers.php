@@ -62,6 +62,22 @@ function redirect(string $path, int $status = 302): Response
     return Response::redirect(url($path), $status);
 }
 
+/**
+ * An icon from the sprite (public/assets/img/icons.svg), hidden from screen readers.
+ * Icon-only buttons must carry their own aria-label.
+ */
+function icon(string $name, string $class = ''): string
+{
+    return '<svg class="icon' . ($class !== '' ? ' ' . e($class) : '') . '" aria-hidden="true" focusable="false">'
+        . '<use href="' . e(asset('img/icons.svg')) . '#' . e($name) . '"></use></svg>';
+}
+
+/** Path of the current page, relative to the app: '/lajme/…'. */
+function current_path(): string
+{
+    return App\Core\Request::current()?->path ?? '/';
+}
+
 /** Render a partial template inside a view: <?= partial('partials/flash') ?> */
 function partial(string $view, array $data = []): string
 {

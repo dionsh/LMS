@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+  <!-- The three lines of the logo, on their own: the site's graphic motif.
+       Used as a CSS mask (see .motif), so its colour comes from CSS. -->
+  <g stroke="#000" stroke-width=".35" fill="none">
+    <line x1="22.92" y1="-10" x2="135.43" y2="110"/>
+    <line x1="52.29" y1="-10" x2="1.40" y2="110"/>
+    <line x1="-10" y1="97.03" x2="110" y2="55.85"/>
+  </g>
+</svg>

@@ -21,6 +21,17 @@ final class Labels
         7 => 'e diel',
     ];
 
+    /** Short day names for tight spaces (day tabs on phones). */
+    public const DAYS_SHORT = [
+        1 => 'Hën',
+        2 => 'Mar',
+        3 => 'Mër',
+        4 => 'Enj',
+        5 => 'Pre',
+        6 => 'Sht',
+        7 => 'Die',
+    ];
+
     public const MONTHS = [
         1  => 'janar',
         2  => 'shkurt',

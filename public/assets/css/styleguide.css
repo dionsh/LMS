@@ -1,0 +1,168 @@
+/* Development-only styles for the design-system page (/_stilet). */
+
+.sg-intro__lead { margin-top: var(--space-4); }
+.sg-intro__actions { margin-top: var(--space-6); }
+
+.sg-toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-7);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--line);
+}
+
+.sg-toc a {
+    padding: .35rem .8rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-pill);
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.sg-toc a:hover {
+    border-color: var(--brand-strong);
+    color: var(--brand-strong);
+}
+
+.sg-frame {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+    min-height: 9rem;
+    padding: var(--space-6);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+}
+
+.sg-frame--paper { background: var(--paper); }
+.sg-frame--surface { background: var(--surface); }
+.sg-frame--ink { border-color: var(--ink); background: var(--ink); }
+
+.sg-marks {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-7);
+    margin-top: var(--space-7);
+}
+
+.sg-marks figure {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-2);
+}
+
+.sg-motif-sample .motif {
+    width: 12rem;
+    height: 6rem;
+    border-radius: var(--radius);
+    color: var(--brand);
+}
+
+.sg-swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+    gap: var(--space-5);
+}
+
+.sg-swatch {
+    display: grid;
+    gap: .15rem;
+    font-size: var(--text-sm);
+}
+
+.sg-swatch__chip {
+    height: 4.5rem;
+    margin-bottom: var(--space-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.sg-swatch code {
+    color: var(--ink-2);
+    font-size: .8125rem;
+}
+
+.sg-sample {
+    display: inline-block;
+    padding: .3rem .6rem;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+}
+
+.sg-type {
+    display: grid;
+}
+
+.sg-type__row {
+    display: grid;
+    gap: var(--space-2);
+    padding-block: var(--space-5);
+    border-top: 1px solid var(--line);
+}
+
+@media (min-width: 48rem) {
+    .sg-type__row {
+        grid-template-columns: 12rem minmax(0, 1fr);
+        gap: var(--space-6);
+        align-items: baseline;
+    }
+}
+
+.sg-dark-text { color: var(--ink); }
+
+.sg-tnum {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-4);
+    font-size: var(--text-lg);
+    font-weight: 700;
+}
+
+.sg-grades {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+}
+
+.sg-grade {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: var(--text-sm);
+    font-weight: 600;
+}
+
+.sg-form { max-width: 52rem; }
+
+.sg-gap { margin-top: var(--space-5); }
+
+.sg-bell h3 { margin-bottom: var(--space-2); }
+.sg-bell .lessons { margin-top: var(--space-4); }
+
+.sg-icons {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+    gap: var(--space-3);
+}
+
+.sg-icons li {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--ink);
+}
+
+.sg-icons code {
+    color: var(--ink-3);
+    font-size: .75rem;
+}
