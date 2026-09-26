@@ -164,16 +164,18 @@ CREATE TABLE lesson_periods (
   CONSTRAINT chk_lesson_periods_times  CHECK (ends_at > starts_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- A class ("paralele") for one academic year, e.g. X-1, XI-3.
--- Display label is derived: roman(grade_level) + "-" + section.
+-- A class ("paralele") for one academic year. The school has three grades
+-- (X, XI, XII) with ~15 classes each; labels are written X/13, XI/5, XII/1.
+-- The label is derived, never stored: roman(grade_level) + "/" + section.
+-- section is numeric so that X/2 sorts before X/13.
 CREATE TABLE classes (
   id                  INT UNSIGNED     NOT NULL AUTO_INCREMENT,
   academic_year_id    INT UNSIGNED     NOT NULL,
   grade_level         TINYINT UNSIGNED NOT NULL,        -- 10, 11, 12
-  section             VARCHAR(10)      NOT NULL,        -- "1", "2" …
+  section             TINYINT UNSIGNED NOT NULL,        -- 1 … 15
   stream              VARCHAR(80)      NULL,            -- drejtimi: "Shkenca natyrore"
   shift               TINYINT UNSIGNED NOT NULL DEFAULT 1,
-  homeroom_teacher_id INT UNSIGNED     NULL,            -- kujdestari i klasës
+  homeroom_teacher_id INT UNSIGNED     NULL,            -- kujdestari i klasës (every class has one; NULL only until assigned)
   home_room_id        INT UNSIGNED     NULL,
   created_at          DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at          DATETIME         NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -188,7 +190,8 @@ CREATE TABLE classes (
     REFERENCES users (id) ON DELETE SET NULL,
   CONSTRAINT fk_classes_home_room FOREIGN KEY (home_room_id)
     REFERENCES rooms (id) ON DELETE SET NULL,
-  CONSTRAINT chk_classes_grade_level CHECK (grade_level BETWEEN 1 AND 13),
+  CONSTRAINT chk_classes_grade_level CHECK (grade_level BETWEEN 10 AND 12),
+  CONSTRAINT chk_classes_section CHECK (section BETWEEN 1 AND 30),
   CONSTRAINT chk_classes_shift CHECK (shift IN (1, 2))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

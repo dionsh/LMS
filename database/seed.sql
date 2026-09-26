@@ -60,19 +60,25 @@ INSERT INTO terms (academic_year_id, name, sort_order, starts_on, ends_on) VALUE
   (LAST_INSERT_ID(), 'Gjysmëvjetori i dytë', 2, '2027-01-18', '2027-06-30');
 
 -- ---------------------------------------------------------------------
--- Bell schedule. The school runs two shifts with 45-minute lessons.
--- Morning shift (confirmed start 08:00): 5-minute breaks, 20-minute main
--- break after the 3rd lesson. Afternoon-shift times are still to be
--- confirmed by the school and will be added here / in the admin panel.
+-- Bell schedule (confirmed by the school): two shifts, six 45-minute
+-- lessons each. 5-minute breaks, except two 10-minute main breaks after
+-- the 2nd and the 4th lesson. Morning starts 08:00, afternoon 14:00.
 -- ---------------------------------------------------------------------
 INSERT INTO lesson_periods (shift, number, starts_at, ends_at) VALUES
+  -- Paradite
   (1, 1, '08:00', '08:45'),
   (1, 2, '08:50', '09:35'),
-  (1, 3, '09:40', '10:25'),
-  (1, 4, '10:45', '11:30'),
-  (1, 5, '11:35', '12:20'),
-  (1, 6, '12:25', '13:10'),
-  (1, 7, '13:15', '14:00');
+  (1, 3, '09:45', '10:30'),
+  (1, 4, '10:35', '11:20'),
+  (1, 5, '11:30', '12:15'),
+  (1, 6, '12:20', '13:05'),
+  -- Pasdite
+  (2, 1, '14:00', '14:45'),
+  (2, 2, '14:50', '15:35'),
+  (2, 3, '15:45', '16:30'),
+  (2, 4, '16:35', '17:20'),
+  (2, 5, '17:30', '18:15'),
+  (2, 6, '18:20', '19:05');
 
 -- ---------------------------------------------------------------------
 -- Subjects of the Kosovo gymnasium curriculum (edit/extend in admin)

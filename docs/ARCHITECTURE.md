@@ -250,8 +250,8 @@ erDiagram
 
 ### 7.3 Key design decisions
 
-1. **`class_subjects` is the hub.** "Matematikë in X-1, taught by Prof. Krasniqi" is one row. Assignments, tests, marks and timetable slots all point at it. If the teacher changes mid-year, the new teacher inherits the full history of that class-subject.
-2. **`enrollments` per academic year**, not a `class_id` on the student. This keeps last year's class and grades intact. The end-of-year promotion (X-1 → XI-1) becomes a simple insert for the new year.
+1. **`class_subjects` is the hub.** "Matematikë in X/13, taught by Prof. Krasniqi" is one row. Assignments, tests, marks and timetable slots all point at it. If the teacher changes mid-year, the new teacher inherits the full history of that class-subject.
+2. **`enrollments` per academic year**, not a `class_id` on the student. This keeps last year's class and grades intact. The end-of-year promotion (X/13 → XI/13) becomes a simple insert for the new year.
 3. **Homework ≠ tests.** `assignments` are handed in through the platform (with files); `assessments` are tests, exams and oral answers that happen in class and whose results the teacher types in. Both feed the **single `grades` table**, along with manual marks.
 4. **Every mark is 1–5** (the Kosovo scale), enforced by a CHECK constraint. Optional raw `points` are stored when a test has a points scale. The admin-editable `grade_thresholds` (default 50/65/80/90 %) *suggest* a mark from the points, and the teacher can always override.
 5. **Averages are computed, the term grade is decided.** The subject average per term is the weighted mean of marks (`Σ grade×weight / Σ weight`, weights from `grade_types`, all 1.00 by default). The teacher then records the **term grade** (`term_grades`) informed by that average, as Kosovo practice requires. Nothing is silently auto-finalised.
@@ -600,7 +600,7 @@ Every module has a designed empty state in plain Albanian — e.g. *"Nuk keni de
 | Temporary password | Fjalëkalim i përkohshëm | Credential slip | Fleta e hyrjes |
 | Student(s) | Nxënësi · Nxënësit | Teacher(s) | **Mësimdhënësi · Mësimdhënësit** |
 | Administrator | Administratori | Homeroom teacher | Kujdestari i klasës |
-| Class (X-1) | Klasa | Subject(s) | Lënda · Lëndët |
+| Class (X/13) | Klasa | Subject(s) | Lënda · Lëndët |
 | Timetable · Period · Room | Orari · Ora · Salla | Shift | Ndërrimi (paradite / pasdite) |
 | Homework / Assignment | Detyra · Detyrat | Submit homework | **Dorëzo detyrën** |
 | Submission(s) | Dorëzimi · Dorëzimet | Deadline | Afati (i dorëzimit) |
@@ -652,17 +652,18 @@ Greeting by hour: Mirëmëngjes (< 12:00) · Mirëdita (< 18:00) · Mirëmbrëma
 1. **No self sign-up.** The school creates every account and hands the credentials to the student; the site offers *Hyr* only (§6.1).
 2. **Only the administration edits the timetable.** Teachers see theirs read-only.
 3. **Two semesters** (*Gjysmëvjetori i parë / i dytë*).
-4. **Two shifts; lessons start at 08:00 and last 45 minutes.**
-5. **Terminology:** *Ballina*, *Mësimdhënësit*, *Dil*, and *Njoftimet* (announcements) vs *Lajmërimet* (personal notifications).
+4. **Bell schedule.** Two shifts of six 45-minute lessons. The morning starts at 08:00 and the afternoon at 14:00. Breaks are 5 minutes, except two 10-minute main breaks after the 2nd and the 4th lesson (seeded in `lesson_periods`).
+5. **School structure.** Three grades — X, XI, XII — with about 15 classes each, written **X/13, XI/5, XII/1**. That is ≈ 45 classes and well over a thousand students, so every admin list is searchable, filterable by grade and class, and paginated. Every class has a *kujdestar* (homeroom teacher).
+6. **Terminology:** *Ballina*, *Mësimdhënësit*, *Dil*, and *Njoftimet* (announcements) vs *Lajmërimet* (personal notifications).
 
 ### Design defaults (change any time)
 
 - **Usernames.** Every account gets a generated username; the e-mail is optional. Login accepts either.
 - **Marks.** 1–5 with a teacher-decided term grade; averages equally weighted until the school sets weights.
+- **Shift per class.** Each class belongs to one shift. If classes switch shifts during the year, the admin changes the class's shift and the lesson times follow automatically (§9.1).
 
 ### Still open
 
-- **Afternoon shift.** When does it start? Are the breaks the same as the morning ones (5 minutes, 20-minute main break after the 3rd lesson)? Does a class keep its shift all year, or switch (per semester or per week)?
 - **Credential delivery.** Printed slips work without any setup. Should the school also want them e-mailed, that needs the school's SMTP account.
 - **Real school details** (address, phone, e-mail, founding year, principal, about text, higher-resolution photos) are left empty in the DB until provided. Nothing is invented.
 
