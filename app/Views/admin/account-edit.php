@@ -72,7 +72,7 @@ $active = $account['status'] === 'active';
             <section class="card" aria-labelledby="teaching-title">
                 <header class="card__head">
                     <h2 class="card__title" id="teaching-title">Mësimi këtë vit</h2>
-                    <?php if ($teaching !== []): ?><span class="meta num"><?= e($weekly) ?> orë në javë</span><?php endif; ?>
+                    <span class="<?= $weekly > (int) $account['weekly_norm'] ? 'badge badge--warning' : 'meta num' ?>"><?= e($weekly) ?> nga <?= e($account['weekly_norm']) ?> orë në javë</span>
                 </header>
                 <?php if ($teaching === []): ?>
                     <p class="meta">Ende nuk i është caktuar asnjë lëndë në ndonjë klasë. Lëndët u caktohen mësimdhënësve te faqja e secilës klasë.</p>

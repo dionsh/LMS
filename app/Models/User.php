@@ -8,6 +8,16 @@ use App\Core\Model;
 
 final class User extends Model
 {
+    /**
+     * Lessons a week a teacher (u) teaches in the year :year_load, by their subjects in
+     * classes (the class's own hours, else the curriculum's).
+     */
+    private const LOAD = '(SELECT COALESCE(SUM(COALESCE(lcs.weekly_hours, lgs.weekly_hours)), 0)
+                             FROM class_subjects lcs
+                             JOIN classes lc ON lc.id = lcs.class_id
+                             LEFT JOIN grade_subjects lgs ON lgs.grade_level = lc.grade_level AND lgs.subject_id = lcs.subject_id
+                            WHERE lcs.teacher_id = u.id AND lc.academic_year_id = :year_load)';
+
     /** Columns safe to keep in memory for the signed-in user (never the password hash). */
     private const PUBLIC_COLUMNS = 'id, role, username, first_name, last_name, email, phone, avatar_path,
                                     status, must_change_password, last_login_at, created_at';
@@ -95,6 +105,7 @@ final class User extends Model
                     u.password_hash IS NOT NULL AS has_credentials,
                     sp.student_number, sp.date_of_birth, sp.gender,
                     tp.title, tp.specialization, tp.bio, tp.show_on_website, tp.timetable_number,
+                    COALESCE(tp.weekly_norm, 20) AS weekly_norm,
                     sc.id AS class_id, sc.grade_level AS class_grade, sc.section AS class_section,
                     hc.id AS homeroom_class_id, hc.grade_level AS homeroom_grade, hc.section AS homeroom_section
                FROM users u
@@ -127,10 +138,11 @@ final class User extends Model
         return self::fetchAll(
             'SELECT u.id, u.role, u.first_name, u.last_name, u.username, u.email, u.status, u.last_login_at,
                     u.password_hash IS NOT NULL AS has_credentials,
-                    tp.title, tp.timetable_number,
+                    tp.title, tp.timetable_number, COALESCE(tp.weekly_norm, 20) AS weekly_norm,
                     (SELECT GROUP_CONCAT(s.short_name ORDER BY s.sort_order SEPARATOR \', \')
                        FROM teacher_subjects ts JOIN subjects s ON s.id = ts.subject_id
                       WHERE ts.teacher_id = u.id) AS subjects,
+                    ' . self::LOAD . ' AS weekly_load,
                     sc.id AS class_id, sc.grade_level AS class_grade, sc.section AS class_section,
                     hc.id AS homeroom_class_id, hc.grade_level AS homeroom_grade, hc.section AS homeroom_section
                FROM users u
@@ -141,7 +153,7 @@ final class User extends Model
               WHERE ' . $where . '
               ORDER BY ' . $order . '
               LIMIT :limit OFFSET :offset',
-            $params + ['year1' => $academicYearId, 'year2' => $academicYearId, 'limit' => $limit, 'offset' => $offset]
+            $params + ['year1' => $academicYearId, 'year2' => $academicYearId, 'year_load' => $academicYearId, 'limit' => $limit, 'offset' => $offset]
         );
     }
 
@@ -282,18 +294,25 @@ final class User extends Model
      *
      * @param list<int> $alsoInclude
      */
-    public static function teacherOptions(array $alsoInclude = []): array
+    public static function teacherOptions(array $alsoInclude = [], int $academicYearId = 0): array
     {
-        $extra = $alsoInclude === [] ? '' : ' OR u.id IN (' . implode(', ', array_fill(0, count($alsoInclude), '?')) . ')';
+        $extra = '';
+        $params = ['year_load' => $academicYearId];
+        foreach (array_values($alsoInclude) as $index => $id) {
+            $extra .= ($index === 0 ? '' : ', ') . ':include' . $index;
+            $params['include' . $index] = (int) $id;
+        }
+        $extra = $extra === '' ? '' : ' OR u.id IN (' . $extra . ')';
 
         $rows = self::fetchAll(
             "SELECT u.id, u.first_name, u.last_name, u.status, tp.title, tp.timetable_number,
+                    COALESCE(tp.weekly_norm, 20) AS weekly_norm, " . self::LOAD . " AS weekly_load,
                     (SELECT GROUP_CONCAT(ts.subject_id) FROM teacher_subjects ts WHERE ts.teacher_id = u.id) AS subject_ids
                FROM users u
                LEFT JOIN teacher_profiles tp ON tp.user_id = u.id
               WHERE u.role = 'teacher' AND (u.status = 'active'{$extra})
               ORDER BY u.last_name, u.first_name",
-            array_values(array_map('intval', $alsoInclude))
+            $params
         );
 
         foreach ($rows as &$row) {

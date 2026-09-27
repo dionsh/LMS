@@ -86,7 +86,8 @@ INSERT INTO lesson_periods (shift, number, starts_at, ends_at) VALUES
 
 -- ---------------------------------------------------------------------
 -- Grades and their shift (confirmed by the school): X in the afternoon,
--- XI and XII in the morning. Classes take their grade's shift by default.
+-- XI and XII in the morning. Classes take their grade's shift by default;
+-- XI-8 … XI-15 are afternoon classes (set per class).
 -- ---------------------------------------------------------------------
 INSERT INTO grade_levels (level, shift) VALUES
   (10, 2),
@@ -95,47 +96,61 @@ INSERT INTO grade_levels (level, shift) VALUES
 
 -- ---------------------------------------------------------------------
 -- The school's subjects (given by the school, 27 Sep 2026). short_name
--- is for the compact whole-school timetable.
+-- is for the compact whole-school timetable. Filozofi and Psikologji are
+-- two subjects of grade XI, 2 lessons a week each.
 -- ---------------------------------------------------------------------
 INSERT INTO subjects (name, short_name, sort_order) VALUES
-  ('Gjuhë shqipe',            'Shqip',    1),
-  ('Gjuhë angleze',           'Angl.',    2),
-  ('Gjuhë gjermane',          'Gjerm.',   3),
-  ('Matematikë',              'Mat.',     4),
-  ('Kimi',                    'Kimi',     5),
-  ('Biologji',                'Biol.',    6),
-  ('Fizikë',                  'Fiz.',     7),
-  ('Edukatë fizike',          'Ed. fiz.', 8),
-  ('Mësim zgjedhor',          'Zgjedh.',  9),
-  ('Teknologji',              'Tekn.',    10),
-  ('Gjeografi',               'Gjeogr.',  11),
-  ('Muzikë',                  'Muz.',     12),
-  ('Art figurativ',           'Art',      13),
-  ('Histori',                 'Hist.',    14),
-  ('Filozofi dhe psikologji', 'Filoz.',   15),
-  ('Astronomi',               'Astr.',    16);
+  ('Gjuhë shqipe',   'Shqip',    1),
+  ('Gjuhë angleze',  'Angl.',    2),
+  ('Gjuhë gjermane', 'Gjerm.',   3),
+  ('Matematikë',     'Mat.',     4),
+  ('Kimi',           'Kimi',     5),
+  ('Biologji',       'Biol.',    6),
+  ('Fizikë',         'Fiz.',     7),
+  ('Edukatë fizike', 'Ed. fiz.', 8),
+  ('Mësim zgjedhor', 'Zgjedh.',  9),
+  ('Teknologji',     'TIK',      10),
+  ('Gjeografi',      'Gjeogr.',  11),
+  ('Muzikë',         'Muz.',     12),
+  ('Art figurativ',  'Art',      13),
+  ('Histori',        'Hist.',    14),
+  ('Filozofi',       'Filoz.',   15),
+  ('Psikologji',     'Psik.',    16),
+  ('Astronomi',      'Astr.',    17);
 
 -- ---------------------------------------------------------------------
--- Curriculum: every grade studies the eleven general subjects, plus
---   X:   Muzikë, Art figurativ, Histori
---   XI:  Filozofi dhe psikologji
---   XII: Astronomi
--- Weekly hours are left empty until the school confirms its plan; the
--- admin fills them in under "Plani mësimor".
+-- Curriculum (plani mësimor, given by the school, 27 Sep 2026): the
+-- subjects of each grade and their lessons a week. Every grade has 30
+-- lessons a week = 6 lessons a day × 5 days, as on the printed timetable.
 -- ---------------------------------------------------------------------
-INSERT INTO grade_subjects (grade_level, subject_id)
-SELECT g.level, s.id
-  FROM grade_levels g
-  JOIN subjects s ON s.sort_order BETWEEN 1 AND 11;
+INSERT INTO grade_subjects (grade_level, subject_id, weekly_hours)
+SELECT plan.grade_level, s.id, plan.weekly_hours
+  FROM (
+            SELECT 10 AS grade_level, 'Gjuhë shqipe' AS name, 3 AS weekly_hours
+  UNION ALL SELECT 10, 'Gjuhë angleze',  2 UNION ALL SELECT 10, 'Gjuhë gjermane', 2
+  UNION ALL SELECT 10, 'Matematikë',     4 UNION ALL SELECT 10, 'Kimi',           2
+  UNION ALL SELECT 10, 'Biologji',       3 UNION ALL SELECT 10, 'Fizikë',         2
+  UNION ALL SELECT 10, 'Edukatë fizike', 2 UNION ALL SELECT 10, 'Mësim zgjedhor', 2
+  UNION ALL SELECT 10, 'Teknologji',     2 UNION ALL SELECT 10, 'Gjeografi',      2
+  UNION ALL SELECT 10, 'Histori',        2 UNION ALL SELECT 10, 'Art figurativ',  1
+  UNION ALL SELECT 10, 'Muzikë',         1
 
-INSERT INTO grade_subjects (grade_level, subject_id)
-SELECT 10, id FROM subjects WHERE name IN ('Muzikë', 'Art figurativ', 'Histori');
+  UNION ALL SELECT 11, 'Gjuhë shqipe',   3 UNION ALL SELECT 11, 'Gjuhë angleze',  2
+  UNION ALL SELECT 11, 'Gjuhë gjermane', 2 UNION ALL SELECT 11, 'Matematikë',     4
+  UNION ALL SELECT 11, 'Kimi',           3 UNION ALL SELECT 11, 'Biologji',       2
+  UNION ALL SELECT 11, 'Fizikë',         3 UNION ALL SELECT 11, 'Edukatë fizike', 2
+  UNION ALL SELECT 11, 'Mësim zgjedhor', 2 UNION ALL SELECT 11, 'Teknologji',     1
+  UNION ALL SELECT 11, 'Gjeografi',      2 UNION ALL SELECT 11, 'Filozofi',       2
+  UNION ALL SELECT 11, 'Psikologji',     2
 
-INSERT INTO grade_subjects (grade_level, subject_id)
-SELECT 11, id FROM subjects WHERE name = 'Filozofi dhe psikologji';
-
-INSERT INTO grade_subjects (grade_level, subject_id)
-SELECT 12, id FROM subjects WHERE name = 'Astronomi';
+  UNION ALL SELECT 12, 'Gjuhë shqipe',   4 UNION ALL SELECT 12, 'Gjuhë angleze',  2
+  UNION ALL SELECT 12, 'Gjuhë gjermane', 1 UNION ALL SELECT 12, 'Matematikë',     4
+  UNION ALL SELECT 12, 'Kimi',           3 UNION ALL SELECT 12, 'Biologji',       3
+  UNION ALL SELECT 12, 'Fizikë',         3 UNION ALL SELECT 12, 'Edukatë fizike', 2
+  UNION ALL SELECT 12, 'Mësim zgjedhor', 2 UNION ALL SELECT 12, 'Teknologji',     2
+  UNION ALL SELECT 12, 'Gjeografi',      2 UNION ALL SELECT 12, 'Astronomi',      2
+  ) AS plan
+  JOIN subjects s ON s.name = plan.name COLLATE utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------
 -- Public news categories

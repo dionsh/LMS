@@ -18,15 +18,20 @@ Running the script again restores these passwords and clears their failed sign-i
 
 Loads the 2026/2027 structure from `school-data.php`. It is safe to run again; nothing is duplicated, and changes made in the admin panel are kept.
 
-- **37 classes**, each with a homeroom teacher (*kujdestar*) and the subjects of its grade's curriculum:
-  - **XI-1 … XI-7 and XII-1 … XII-15** in the morning shift, with their **real homeroom teachers**, exactly as on the official timetable *Orari i mësimit, Paradite, 2026/2027* (21.09.2026, `images/orari.jpg`).
-  - **X-1 … X-15** in the afternoon shift. Their homeroom teachers are placeholders.
-- **80 teachers**, stored as records **without sign-in credentials**. They can't sign in until the admin issues a login slip (T05).
-  - 22 are the real homeroom teachers of XI and XII. They are shown on the public website. They do **not** teach in the demo, because the school has not yet said which subjects they teach.
-  - 58 are **placeholders** with one or two subjects each. They teach every class, balanced to 12–25 lessons a week. They are hidden from the public website (`show_on_website = 0`) and will be replaced by the real staff list.
-  - The test account `prove.mesimdhenes` teaches Matematikë in XII-1, XI-5 and X-13, so the teacher's pages have something to show.
-- **A demo timetable** for every class: each subject as many times a week as planned, at most twice a day, no teacher in two classes at once. It is generated with a fixed seed, so it is the same on every run. Classes that already have a timetable are left alone.
-- **Weekly hours are demo values.** The school's real plan has not been given yet. Each grade adds up to 30 lessons (6 a day × 5 days), matching the official timetable. They are only filled in where the curriculum has no hours, so hours entered under *Plani mësimor* are never overwritten.
+**Real data** (from the school; the source photos stay on the developer's machine, not in the repository):
+- **45 classes**, each with the subjects and weekly hours of its grade's curriculum (`database/seed.sql`):
+  - morning: **XI-1 … XI-7 and XII-1 … XII-15**, with their real homeroom teachers from the official timetable *Orari i mësimit, Paradite, 2026/2027* (21.09.2026);
+  - afternoon: **X-1 … X-15 and XI-8 … XI-15**.
+- **The school's 72 teachers** with their timetable numbers (`staff.php`, from the staff list 2026–2027).
+  - They are records **without sign-in credentials** until the admin issues login slips (T05), and are shown on the public website.
+  - Which subjects they teach is not known yet: `staff.php` has an empty `subjects` list for each, to be filled from the school's list.
+
+**Demo data** (development only, until the school's data arrives):
+- **Demo teachers** ("Demo Matematikë 1", "Demo Matematikë 2" …) teach every subject whose real teacher is not known.
+  - Each has at most 20 lessons a week (the norm), is hidden from the public website and has no timetable number.
+  - They are also the afternoon classes' homeroom teachers.
+- The test account `prove.mesimdhenes` teaches Matematikë in XII-1, XI-5 and X-13, so the teacher's pages have something to show in both shifts.
+- **A demo timetable** for every class that has none: each subject as many times a week as planned, at most twice a day, no teacher in two classes at once. It is generated with a fixed seed, so it is the same on every run.
 - **10 student accounts**, all with the password **`Nxenes-Demo-2026`**:
 
 | Username | Name | Class |

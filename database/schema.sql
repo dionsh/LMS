@@ -77,11 +77,13 @@ CREATE TABLE teacher_profiles (
   bio              TEXT              NULL,
   show_on_website  TINYINT(1)        NOT NULL DEFAULT 1,
   timetable_number SMALLINT UNSIGNED NULL,              -- the teacher's number on the school's printed timetable (cells show "25", not a name)
+  weekly_norm      TINYINT UNSIGNED  NOT NULL DEFAULT 20, -- lessons a week the teacher is employed for (normë e plotë: 20; part-time less)
   PRIMARY KEY (user_id),
   UNIQUE KEY uq_teacher_profiles_timetable_number (timetable_number),
   CONSTRAINT fk_teacher_profiles_user FOREIGN KEY (user_id)
     REFERENCES users (id) ON DELETE CASCADE,
-  CONSTRAINT chk_teacher_profiles_timetable_number CHECK (timetable_number IS NULL OR timetable_number BETWEEN 1 AND 999)
+  CONSTRAINT chk_teacher_profiles_timetable_number CHECK (timetable_number IS NULL OR timetable_number BETWEEN 1 AND 999),
+  CONSTRAINT chk_teacher_profiles_weekly_norm CHECK (weekly_norm BETWEEN 1 AND 40)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE student_profiles (

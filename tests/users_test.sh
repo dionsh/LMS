@@ -61,11 +61,12 @@ contains "search by surname finds Ariana Gashi"             "$T/body" "ariana.ga
 code $A "/admin/nxenesit?gjendja=joaktiv" >/dev/null
 contains "status filter finds the inactive account"         "$T/body" "prove.joaktiv"
 code $A "/admin/mesimdhenesit?llogaria=pa-flete" >/dev/null
-contains "80 teachers without a login slip"                 "$T/body" "80 mësimdhënës"
-contains "…shown in pages of 50"                            "$T/body" "Po shfaqen 1–50 nga 80"
+NOSLIP=$(SQL "SELECT COUNT(*) FROM users WHERE role='teacher' AND password_hash IS NULL")
+contains "all $NOSLIP teachers without a login slip"          "$T/body" "$NOSLIP mësimdhënës"
+contains "…shown in pages of 50"                            "$T/body" "Po shfaqen 1–50 nga $NOSLIP"
 contains "…with a link to page 2 keeping the filter"        "$T/body" "llogaria=pa-flete&amp;faqja=2"
 code $A "/admin/mesimdhenesit?llogaria=pa-flete&faqja=2" >/dev/null
-contains "page 2"                                           "$T/body" "Po shfaqen 51–80 nga 80"
+contains "page 2"                                           "$T/body" "Po shfaqen 51–100 nga $NOSLIP"
 code $A "/admin/nxenesit?q=%25" >/dev/null
 contains "a % in the search is literal (no match-all)"      "$T/body" "Asnjë nxënës nuk përputhet"
 
@@ -107,7 +108,7 @@ check "edit page"                                           "200" "$(code $A /ad
 check "move to XI-5 and rename"                             "302 /admin/perdoruesit/$NEW/ndrysho" "$(post $A /admin/perdoruesit/$NEW/ndrysho /admin/perdoruesit/$NEW/ndrysho --data first_name=T%C3%ABsta --data last_name=Nx%C3%ABn%C3%ABsi --data-urlencode class_id=$CLASS_XI5 --data-urlencode student_number=T-001 --data-urlencode gender=F --data-urlencode date_of_birth=2009-02-03)"
 check "…saved in the database"                              "Tësta XI-5" "$(SQL "SELECT CONCAT(u.first_name,' ',ELT(c.grade_level-9,'X','XI','XII'),'-',c.section) FROM users u JOIN enrollments e ON e.student_id=u.id JOIN classes c ON c.id=e.class_id WHERE u.id=$NEW")"
 check "…username stays the same"                            "test.nxenesi" "$(SQL "SELECT username FROM users WHERE id=$NEW")"
-check "teacher profile fields save"                         "302 /admin/perdoruesit/$ENVER/ndrysho" "$(post $A /admin/perdoruesit/$ENVER/ndrysho /admin/perdoruesit/$ENVER/ndrysho --data-urlencode first_name=Enver --data-urlencode last_name=Bajrami --data-urlencode title=Prof. --data specialization=Matematik%C3%AB --data-urlencode show_on_website=1)"
+check "teacher profile fields save"                         "302 /admin/perdoruesit/$ENVER/ndrysho" "$(post $A /admin/perdoruesit/$ENVER/ndrysho /admin/perdoruesit/$ENVER/ndrysho --data-urlencode first_name=Enver --data-urlencode last_name=Bajrami --data-urlencode title=Prof. --data specialization=Matematik%C3%AB --data-urlencode show_on_website=1 --data-urlencode timetable_number=26 --data-urlencode weekly_norm=20)"
 check "…specialization stored"                              "Matematikë 1" "$(SQL "SELECT CONCAT(specialization,' ',show_on_website) FROM teacher_profiles WHERE user_id=$ENVER")"
 code $A /admin/perdoruesit/$ENVER/ndrysho >/dev/null
 contains "teacher edit page shows the homeroom class"      "$T/body" "Kujdestar i klasës XII-1"

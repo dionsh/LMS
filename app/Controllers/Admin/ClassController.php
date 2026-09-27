@@ -243,7 +243,7 @@ final class ClassController extends AdminController
             'title'     => 'Klasa ' . Format::classLabel((int) $class['grade_level'], (int) $class['section']),
             'class'     => $class,
             'subjects'  => $subjects,
-            'teachers'  => User::teacherOptions($this->assignedTeachers($subjects)),
+            'teachers'  => User::teacherOptions($this->assignedTeachers($subjects), (int) $class['academic_year_id']),
             'students'  => SchoolClass::students($id),
             'addable'   => array_values(array_filter(Subject::options(true), static fn (array $s): bool => !in_array((int) $s['id'], $taken, true))),
             'posted'    => $posted,

@@ -61,6 +61,8 @@ INSERT INTO grade_subjects (grade_level, subject_id, weekly_hours) VALUES (9,4,4
 UPDATE teacher_profiles SET timetable_number = 25 WHERE user_id = 2;
 -- 21. a class-subject with 13 lessons a week
 UPDATE class_subjects SET weekly_hours = 13 WHERE id = 1;
+-- 22. a teaching norm of 0 lessons a week
+UPDATE teacher_profiles SET weekly_norm = 0 WHERE user_id = 1;
 
 SELECT '--- these MUST succeed ---' AS result;
 -- several students without an e-mail address

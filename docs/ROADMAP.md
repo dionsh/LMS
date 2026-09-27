@@ -105,13 +105,24 @@ Legend: ✅ done · 🟡 partly done · 🔜 next · ⬜ planned
   - Done when:
     - a class added through the form has its subjects and can be given a teacher for each;
     - a curriculum change reaches every class of the grade.
+- ✅ **T06b · The school's real data** — **done 27 Sep 2026**: `tests/school_data_test.sh` passes 49/49, `tests/structure_test.sh` 108/108 and `tests/database_test.sh` 22/22.
+  - Verified:
+    - every grade's curriculum adds up to 30 lessons a week (X 14 subjects, XI 13, XII 12), with the hours the school gave;
+    - the 45 classes are in the right shift (morning XI-1…7 and XII-1…15; afternoon X-1…15 and XI-8…15);
+    - the 72 teachers carry their number from the staff list (26 = Enver Bajrami, 53 = Besarta Ajeti);
+    - no teacher is above the 20-lesson norm;
+    - a half norm is saved and a teacher above it is flagged.
+  - Deliverables:
+    - curriculum with the school's weekly hours; Filozofi and Psikologji as two XI subjects; Teknologji shown as TIK
+    - 45 classes in two shifts; the school's 72 teachers from the staff list with their timetable numbers
+    - teaching norm per teacher (20 lessons, less for part-time), with load against norm on the teacher list, the teacher's page and in the subject-assignment lists
+    - the photos of the timetable and the staff list are no longer kept in the repository; their content is in `database/demo/`
 - 🟡 **T07 · Demo school data** — **part done 27 Sep 2026** (brought forward at the school's request):
-  - `database/demo/school.php` loads:
-    - 37 classes: XI-1…7 and XII-1…15 in the morning with their **real homeroom teachers** from the official timetable, and X-1…15 in the afternoon;
-    - 80 teachers (records without credentials): the 22 real homeroom teachers plus 58 placeholders who teach every subject;
-    - demo weekly hours (30 a week, as on the timetable);
+  - `database/demo/school.php` loads the school's real structure (T06b), and, only where the school's data is not known yet:
+    - demo teachers ("Demo Matematikë 1" …, at most 20 lessons a week) for subjects whose real teacher is not known;
+    - demo homeroom teachers for the afternoon classes;
+    - a generated timetable for classes without one;
     - 10 student accounts in X-13, XI-5 and XII-1.
-  - `tests/school_data_test.sh` passes 39/39.
   - Timetable (T08): a clash-free demo week for every class.
   - Still to come: sample work (homework, tests, marks) with T10–T13.
   - Deliverable: `database/demo/` with a realistic test school (a few classes, ~8 teachers, ~60 students, timetable, sample work) so every later task can be tested properly. Test logins are recorded there, not in chat.

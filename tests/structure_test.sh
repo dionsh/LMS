@@ -15,15 +15,17 @@ YEAR="(SELECT id FROM academic_years WHERE is_current = 1)"
 restore() {
   SQL "UPDATE academic_years SET is_current = (name = '2026/2027');
        DELETE FROM academic_years WHERE name LIKE '20__/20__' AND name <> '2026/2027';
-       DELETE FROM classes WHERE grade_level = 11 AND section >= 8;
+       DELETE FROM classes WHERE grade_level = 11 AND section >= 16;
        DELETE FROM subjects WHERE name LIKE 'Test%';
        DELETE FROM rooms WHERE name LIKE 'Test%';
        DELETE FROM grade_levels WHERE level = 13;
-       DELETE gs FROM grade_subjects gs JOIN subjects s ON s.id = gs.subject_id WHERE gs.grade_level = 12 AND s.name = 'Filozofi dhe psikologji';
+       DELETE gs FROM grade_subjects gs JOIN subjects s ON s.id = gs.subject_id WHERE gs.grade_level = 12 AND s.name = 'Filozofi';
        UPDATE grade_levels SET shift = IF(level = 10, 2, 1);
        INSERT IGNORE INTO grade_subjects (grade_level, subject_id) SELECT g.level, s.id FROM grade_levels g JOIN subjects s ON s.sort_order BETWEEN 1 AND 11;
-       UPDATE teacher_profiles SET timetable_number = NULL;
-       DELETE ts FROM teacher_subjects ts JOIN users u ON u.id = ts.teacher_id WHERE u.username IN ('prove.mesimdhenes', 'agim.berisha');"
+       UPDATE teacher_profiles SET timetable_number = NULL WHERE timetable_number >= 90;
+       UPDATE teacher_profiles SET weekly_norm = 20;
+       DELETE ts FROM teacher_subjects ts JOIN users u ON u.id = ts.teacher_id WHERE u.username IN ('prove.mesimdhenes', 'demo.gjuheshqipe1');
+       INSERT INTO teacher_subjects (teacher_id, subject_id) SELECT u.id, s.id FROM users u JOIN subjects s ON s.sort_order = 1 WHERE u.username = 'demo.gjuheshqipe1';"
   "$PHP" database/demo/test-accounts.php > /dev/null
   "$PHP" database/demo/school.php > /dev/null
 }
@@ -53,7 +55,7 @@ FP=$(SQL "SELECT id FROM subjects WHERE name LIKE 'Filozofi%'")
 ASTR=$(SQL "SELECT id FROM subjects WHERE name = 'Astronomi'")
 ENVER=$(SQL "SELECT id FROM users WHERE username='enver.bajrami'")
 TEST_T=$(SQL "SELECT id FROM users WHERE username='prove.mesimdhenes'")
-AGIM=$(SQL "SELECT id FROM users WHERE username='agim.berisha'")
+DEMO_T=$(SQL "SELECT id FROM users WHERE username='demo.gjuheshqipe1'")
 STUDENT=$(SQL "SELECT id FROM users WHERE username='ariana.gashi'")
 
 echo "== Who may change the structure =="
@@ -63,7 +65,7 @@ check "student → /admin/klasat/shto is forbidden"           "403" "$(code $S /
 check "teacher → /admin/plani-mesimor is forbidden"         "403" "$(code $M /admin/plani-mesimor)"
 check "teacher cannot add a subject"                        "403 " "$(post $M /admin/lendet/shto /mesimdhenesi --data-urlencode name=Test)"
 check "guest → sign-in page"                                "302 /hyr" "$(go $T/guest /admin/lendet)"
-check "adding a class without CSRF token is refused"        "403" "$(curl -s -o /dev/null -w '%{http_code}' -b $A --data 'grade_level=11&section=8&shift=1' $B/admin/klasat/shto)"
+check "adding a class without CSRF token is refused"        "403" "$(curl -s -o /dev/null -w '%{http_code}' -b $A --data 'grade_level=11&section=16&shift=1' $B/admin/klasat/shto)"
 
 echo; echo "== Curriculum (plani mësimor) =="
 check "curriculum page"                                     "200" "$(code $A /admin/plani-mesimor)"
@@ -77,7 +79,7 @@ while read -r sid hours; do XII_FORM+=(--data-urlencode "subjects[]=$sid" --data
   < <(SQL "SELECT subject_id, COALESCE(weekly_hours,'') FROM grade_subjects WHERE grade_level = 12")
 check "13 hours a week → 422"                              "422 " "$(post $A /admin/plani-mesimor/12 /admin/plani-mesimor/12 --data-urlencode shift=1 "${XII_FORM[@]}" --data-urlencode "subjects[]=$FP" --data-urlencode "hours[$FP]=13")"
 contains "…explains the range"                              "$T/body" "numër nga 1 deri në 12"
-check "add Filozofi dhe psikologji to XII (1 hour)"         "302 /admin/plani-mesimor" "$(post $A /admin/plani-mesimor/12 /admin/plani-mesimor/12 --data-urlencode shift=1 "${XII_FORM[@]}" --data-urlencode "subjects[]=$FP" --data-urlencode "hours[$FP]=1")"
+check "add Filozofi to XII (1 hour)            "         "302 /admin/plani-mesimor" "$(post $A /admin/plani-mesimor/12 /admin/plani-mesimor/12 --data-urlencode shift=1 "${XII_FORM[@]}" --data-urlencode "subjects[]=$FP" --data-urlencode "hours[$FP]=1")"
 check "…all 15 XII classes got the subject"                 "15" "$(SQL "SELECT COUNT(*) FROM class_subjects cs JOIN classes c ON c.id=cs.class_id WHERE c.grade_level=12 AND cs.subject_id=$FP")"
 flash $A /admin/plani-mesimor
 contains "…and the admin is told"                           "$T/body" "15 lëndë iu shtuan paraleleve"
@@ -95,7 +97,7 @@ check "…still there"                                        "1" "$(SQL "SELECT
 
 echo; echo "== Subjects =="
 check "subjects page"                                       "200" "$(code $A /admin/lendet)"
-contains "…lists Filozofi dhe psikologji"                   "$T/body" "Filozofi dhe psikologji"
+contains "…lists Psikologji"                                "$T/body" "Psikologji"
 check "empty name → 422"                                    "422 " "$(post $A /admin/lendet/shto /admin/lendet/shto --data-urlencode name=)"
 contains "…asks for the name"                               "$T/body" "Shkruani emrin e lëndës."
 check "duplicate subject → 422"                             "422 " "$(post $A /admin/lendet/shto /admin/lendet/shto --data-urlencode name=Kimi)"
@@ -103,7 +105,7 @@ contains "…says it exists"                                  "$T/body" "Kjo lë
 check "add Test Informatikë for XI, 2 hours"                "302 /admin/lendet" "$(post $A /admin/lendet/shto /admin/lendet/shto --data "name=Test%20Informatik%C3%AB" --data-urlencode "grades[]=11" --data-urlencode "hours[11]=2" --data-urlencode is_active=1)"
 TEST_SUBJECT=$(SQL "SELECT id FROM subjects WHERE name LIKE 'Test Informatik%'")
 check "…short name taken from the name"                     "Test Informa" "$(SQL "SELECT short_name FROM subjects WHERE id=$TEST_SUBJECT")"
-check "…every XI class got it"                              "7" "$(SQL "SELECT COUNT(*) FROM class_subjects cs JOIN classes c ON c.id=cs.class_id WHERE cs.subject_id=$TEST_SUBJECT")"
+check "…every XI class got it"                              "15" "$(SQL "SELECT COUNT(*) FROM class_subjects cs JOIN classes c ON c.id=cs.class_id WHERE cs.subject_id=$TEST_SUBJECT")"
 check "move it to XII only"                                 "302 /admin/lendet/$TEST_SUBJECT/ndrysho" "$(post $A /admin/lendet/$TEST_SUBJECT/ndrysho /admin/lendet/$TEST_SUBJECT/ndrysho --data "name=Test%20Informatik%C3%AB" --data-urlencode "grades[]=12" --data-urlencode "hours[12]=1" --data-urlencode is_active=1)"
 check "…now in the 15 XII classes, none of XI"              "12:15" "$(SQL "SELECT GROUP_CONCAT(CONCAT(c.grade_level,':',n)) FROM (SELECT c.grade_level, COUNT(*) n FROM class_subjects cs JOIN classes c ON c.id=cs.class_id WHERE cs.subject_id=$TEST_SUBJECT GROUP BY c.grade_level) c")"
 check "a taught subject cannot be deleted"                  "302 /admin/lendet/$MAT/ndrysho" "$(post $A /admin/lendet/$MAT/fshij /admin/lendet/$MAT/ndrysho)"
@@ -115,40 +117,40 @@ check "…gone"                                               "0" "$(SQL "SELECT
 
 echo; echo "== Classes =="
 check "add-class page for XI"                               "200" "$(code $A "/admin/klasat/shto?niveli=11")"
-contains "…suggests the next free section (8)"              "$T/body" 'name="section" value="8"'
+contains "…suggests the next free section (16)"             "$T/body" 'name="section" value="16"'
 check "XI-3 exists → 422"                                   "422 " "$(post $A /admin/klasat/shto /admin/klasat/shto --data-urlencode grade_level=11 --data-urlencode section=3 --data-urlencode shift=1)"
 contains "…says so"                                         "$T/body" "Klasa XI-3 ekziston tashmë"
 check "a grade that does not exist → 422"                   "422 " "$(post $A /admin/klasat/shto /admin/klasat/shto --data-urlencode grade_level=9 --data-urlencode section=1 --data-urlencode shift=1)"
-check "Enver Bajrami is already homeroom of XII-1 → 422"    "422 " "$(post $A /admin/klasat/shto /admin/klasat/shto --data-urlencode grade_level=11 --data-urlencode section=8 --data-urlencode shift=1 --data-urlencode homeroom_teacher_id=$ENVER)"
+check "Enver Bajrami is already homeroom of XII-1 → 422"    "422 " "$(post $A /admin/klasat/shto /admin/klasat/shto --data-urlencode grade_level=11 --data-urlencode section=16 --data-urlencode shift=1 --data-urlencode homeroom_teacher_id=$ENVER)"
 contains "…says of which class"                             "$T/body" "tashmë kujdestar i klasës XII-1"
-check "a student as homeroom teacher → 422"                 "422 " "$(post $A /admin/klasat/shto /admin/klasat/shto --data-urlencode grade_level=11 --data-urlencode section=8 --data-urlencode shift=1 --data-urlencode homeroom_teacher_id=$STUDENT)"
-r=$(post $A /admin/klasat/shto /admin/klasat/shto --data-urlencode grade_level=11 --data-urlencode section=8 --data-urlencode shift=1 --data-urlencode homeroom_teacher_id=$TEST_T --data "stream=Shkenca%20natyrore")
-XI8=$(SQL "SELECT id FROM classes WHERE grade_level=11 AND section=8 AND academic_year_id=$YEAR")
-check "add XI-8 → its page"                                 "302 /admin/klasat/$XI8" "$r"
-check "…with XI's 12 subjects from the curriculum"          "12" "$(SQL "SELECT COUNT(*) FROM class_subjects WHERE class_id=$XI8")"
-check "class page"                                          "200" "$(code $A /admin/klasat/$XI8)"
-contains "…titled XI-8"                                     "$T/body" "Klasa XI-8"
+check "a student as homeroom teacher → 422"                 "422 " "$(post $A /admin/klasat/shto /admin/klasat/shto --data-urlencode grade_level=11 --data-urlencode section=16 --data-urlencode shift=1 --data-urlencode homeroom_teacher_id=$STUDENT)"
+r=$(post $A /admin/klasat/shto /admin/klasat/shto --data-urlencode grade_level=11 --data-urlencode section=16 --data-urlencode shift=1 --data-urlencode homeroom_teacher_id=$TEST_T --data "stream=Shkenca%20natyrore")
+XI16=$(SQL "SELECT id FROM classes WHERE grade_level=11 AND section=16 AND academic_year_id=$YEAR")
+check "add XI-16 → its page"                                 "302 /admin/klasat/$XI16" "$r"
+check "…with XI's 13 subjects from the curriculum"          "13" "$(SQL "SELECT COUNT(*) FROM class_subjects WHERE class_id=$XI16")"
+check "class page"                                          "200" "$(code $A /admin/klasat/$XI16)"
+contains "…titled XI-16"                                     "$T/body" "Klasa XI-16"
 contains "…with the homeroom teacher"                       "$T/body" "Kujdestari: Provë Mësimdhënëse"
-contains "…offering Filozofi dhe psikologji"                "$T/body" "Filozofi dhe psikologji"
+contains "…offering Psikologji"                             "$T/body" "Psikologji"
 check "unknown class → 404"                                 "404" "$(code $A /admin/klasat/999999)"
-CS_MAT=$(SQL "SELECT id FROM class_subjects WHERE class_id=$XI8 AND subject_id=$MAT")
-CS_FP=$(SQL "SELECT id FROM class_subjects WHERE class_id=$XI8 AND subject_id=$FP")
-check "a student as a subject's teacher → 422"             "422 " "$(post $A /admin/klasat/$XI8/lendet /admin/klasat/$XI8 --data-urlencode "teacher[$CS_MAT]=$STUDENT")"
+CS_MAT=$(SQL "SELECT id FROM class_subjects WHERE class_id=$XI16 AND subject_id=$MAT")
+CS_FP=$(SQL "SELECT id FROM class_subjects WHERE class_id=$XI16 AND subject_id=$FP")
+check "a student as a subject's teacher → 422"             "422 " "$(post $A /admin/klasat/$XI16/lendet /admin/klasat/$XI16 --data-urlencode "teacher[$CS_MAT]=$STUDENT")"
 contains "…asks for a teacher from the list"                "$T/body" "Zgjidhni mësimdhënësin nga lista."
-check "99 hours → 422"                                      "422 " "$(post $A /admin/klasat/$XI8/lendet /admin/klasat/$XI8 --data-urlencode "hours[$CS_MAT]=99")"
-check "assign Matematikë (5 h) and Filozofi"                "302 /admin/klasat/$XI8" "$(post $A /admin/klasat/$XI8/lendet /admin/klasat/$XI8 --data-urlencode "teacher[$CS_MAT]=$TEST_T" --data-urlencode "hours[$CS_MAT]=5" --data-urlencode "teacher[$CS_FP]=$AGIM")"
+check "99 hours → 422"                                      "422 " "$(post $A /admin/klasat/$XI16/lendet /admin/klasat/$XI16 --data-urlencode "hours[$CS_MAT]=99")"
+check "assign Matematikë (5 h) and Filozofi"                "302 /admin/klasat/$XI16" "$(post $A /admin/klasat/$XI16/lendet /admin/klasat/$XI16 --data-urlencode "teacher[$CS_MAT]=$TEST_T" --data-urlencode "hours[$CS_MAT]=5" --data-urlencode "teacher[$CS_FP]=$DEMO_T")"
 check "…saved: teacher and the class's own hours"          "$TEST_T 5" "$(SQL "SELECT CONCAT(teacher_id,' ',weekly_hours) FROM class_subjects WHERE id=$CS_MAT")"
-check "…hours left empty follow the curriculum"             "$AGIM NULL 2" "$(SQL "SELECT CONCAT(cs.teacher_id,' ',COALESCE(cs.weekly_hours,'NULL'),' ',gs.weekly_hours) FROM class_subjects cs JOIN grade_subjects gs ON gs.subject_id=cs.subject_id AND gs.grade_level=11 WHERE cs.id=$CS_FP")"
+check "…hours left empty follow the curriculum"             "$DEMO_T NULL 2" "$(SQL "SELECT CONCAT(cs.teacher_id,' ',COALESCE(cs.weekly_hours,'NULL'),' ',gs.weekly_hours) FROM class_subjects cs JOIN grade_subjects gs ON gs.subject_id=cs.subject_id AND gs.grade_level=11 WHERE cs.id=$CS_FP")"
 code $A /admin/perdoruesit/$TEST_T/ndrysho >/dev/null
-contains "the teacher's page lists what they teach"         "$T/body" "XI-8 · Matematikë"
-check "add Astronomi (outside XI's plan)"                  "302 /admin/klasat/$XI8" "$(post $A /admin/klasat/$XI8/lendet/shto /admin/klasat/$XI8 --data-urlencode subject_id=$ASTR)"
-code $A /admin/klasat/$XI8 >/dev/null
+contains "the teacher's page lists what they teach"         "$T/body" "XI-16 · Matematikë"
+check "add Astronomi (outside XI's plan)"                  "302 /admin/klasat/$XI16" "$(post $A /admin/klasat/$XI16/lendet/shto /admin/klasat/$XI16 --data-urlencode subject_id=$ASTR)"
+code $A /admin/klasat/$XI16 >/dev/null
 contains "…marked as outside the curriculum"                "$T/body" "Jashtë planit mësimor"
-check "…adding it twice is refused"                         "13" "$(post $A /admin/klasat/$XI8/lendet/shto /admin/klasat/$XI8 --data-urlencode subject_id=$ASTR >/dev/null; SQL "SELECT COUNT(*) FROM class_subjects WHERE class_id=$XI8")"
-CS_ASTR=$(SQL "SELECT id FROM class_subjects WHERE class_id=$XI8 AND subject_id=$ASTR")
-check "a curriculum subject cannot be removed by hand"      "13" "$(post $A /admin/klasat/$XI8/lendet/hiq /admin/klasat/$XI8 --data-urlencode class_subject_id=$CS_MAT >/dev/null; SQL "SELECT COUNT(*) FROM class_subjects WHERE class_id=$XI8")"
-check "remove Astronomi"                                    "302 /admin/klasat/$XI8" "$(post $A /admin/klasat/$XI8/lendet/hiq /admin/klasat/$XI8 --data-urlencode class_subject_id=$CS_ASTR)"
-check "…gone"                                               "12" "$(SQL "SELECT COUNT(*) FROM class_subjects WHERE class_id=$XI8")"
+check "…adding it twice is refused"                         "14" "$(post $A /admin/klasat/$XI16/lendet/shto /admin/klasat/$XI16 --data-urlencode subject_id=$ASTR >/dev/null; SQL "SELECT COUNT(*) FROM class_subjects WHERE class_id=$XI16")"
+CS_ASTR=$(SQL "SELECT id FROM class_subjects WHERE class_id=$XI16 AND subject_id=$ASTR")
+check "a curriculum subject cannot be removed by hand"      "14" "$(post $A /admin/klasat/$XI16/lendet/hiq /admin/klasat/$XI16 --data-urlencode class_subject_id=$CS_MAT >/dev/null; SQL "SELECT COUNT(*) FROM class_subjects WHERE class_id=$XI16")"
+check "remove Astronomi"                                    "302 /admin/klasat/$XI16" "$(post $A /admin/klasat/$XI16/lendet/hiq /admin/klasat/$XI16 --data-urlencode class_subject_id=$CS_ASTR)"
+check "…gone"                                               "13" "$(SQL "SELECT COUNT(*) FROM class_subjects WHERE class_id=$XI16")"
 
 echo; echo "== Rooms: the class's own room =="
 check "rooms page"                                          "200" "$(code $A /admin/sallat)"
@@ -156,13 +158,13 @@ check "add Test Salla 12"                                   "302 /admin/sallat" 
 check "…twice → 422"                                        "422 " "$(post $A /admin/sallat/shto /admin/sallat --data-urlencode "name=Test Salla 12")"
 check "capacity 0 → 422"                                    "422 " "$(post $A /admin/sallat/shto /admin/sallat --data-urlencode "name=Test Palestra" --data-urlencode capacity=0)"
 ROOM=$(SQL "SELECT id FROM rooms WHERE name='Test Salla 12'")
-check "XI-8 gets the room"                                  "302 /admin/klasat/$XI8" "$(post $A /admin/klasat/$XI8/ndrysho /admin/klasat/$XI8/ndrysho --data-urlencode section=8 --data-urlencode shift=1 --data-urlencode homeroom_teacher_id=$TEST_T --data-urlencode home_room_id=$ROOM)"
+check "XI-16 gets the room"                                  "302 /admin/klasat/$XI16" "$(post $A /admin/klasat/$XI16/ndrysho /admin/klasat/$XI16/ndrysho --data-urlencode section=16 --data-urlencode shift=1 --data-urlencode homeroom_teacher_id=$TEST_T --data-urlencode home_room_id=$ROOM)"
 check "another morning class in the same room → 422"        "422 " "$(post $A /admin/klasat/$XI7/ndrysho /admin/klasat/$XI7/ndrysho --data-urlencode section=7 --data-urlencode shift=1 --data-urlencode home_room_id=$ROOM)"
-contains "…the room belongs to XI-8 in that shift"          "$T/body" "Kjo sallë është e klasës XI-8 në të njëjtin ndërrim."
+contains "…the room belongs to XI-16 in that shift"          "$T/body" "Kjo sallë është e klasës XI-16 në të njëjtin ndërrim."
 X1_HOMEROOM=$(SQL "SELECT homeroom_teacher_id FROM classes WHERE id=$X1")
 check "an afternoon class may share it"                     "302 /admin/klasat/$X1" "$(post $A /admin/klasat/$X1/ndrysho /admin/klasat/$X1/ndrysho --data-urlencode section=1 --data-urlencode shift=2 --data-urlencode homeroom_teacher_id=$X1_HOMEROOM --data-urlencode home_room_id=$ROOM)"
 code $A /admin/sallat >/dev/null
-contains "rooms list shows both classes"                    "$T/body" "X-1, XI-8"
+contains "rooms list shows both classes"                    "$T/body" "X-1, XI-16"
 check "a room in use cannot be deleted"                     "302 /admin/sallat/$ROOM/ndrysho" "$(post $A /admin/sallat/$ROOM/fshij /admin/sallat/$ROOM/ndrysho)"
 post $A /admin/klasat/$X1/ndrysho /admin/klasat/$X1/ndrysho --data-urlencode section=1 --data-urlencode shift=2 --data-urlencode homeroom_teacher_id=$X1_HOMEROOM >/dev/null
 
@@ -170,19 +172,26 @@ echo; echo "== Deleting classes =="
 check "a class with students cannot be deleted"             "302 /admin/klasat/$XII1/ndrysho" "$(post $A /admin/klasat/$XII1/fshij /admin/klasat/$XII1/ndrysho)"
 flash $A /admin/klasat/$XII1/ndrysho
 contains "…the admin is told why"                           "$T/body" "Klasa XII-1 ka nxënës."
-check "delete XI-8 (empty)"                                 "302 /admin/klasat" "$(post $A /admin/klasat/$XI8/fshij /admin/klasat/$XI8/ndrysho)"
-check "…its subjects went with it"                          "0" "$(SQL "SELECT COUNT(*) FROM class_subjects WHERE class_id=$XI8")"
+check "delete XI-16 (empty)"                                 "302 /admin/klasat" "$(post $A /admin/klasat/$XI16/fshij /admin/klasat/$XI16/ndrysho)"
+check "…its subjects went with it"                          "0" "$(SQL "SELECT COUNT(*) FROM class_subjects WHERE class_id=$XI16")"
 
 echo; echo "== Teachers: subjects and timetable numbers =="
-check "teacher: number 25 and two subjects"                 "302 /admin/perdoruesit/$AGIM/ndrysho" "$(post $A /admin/perdoruesit/$AGIM/ndrysho /admin/perdoruesit/$AGIM/ndrysho --data-urlencode first_name=Agim --data-urlencode last_name=Berisha --data-urlencode title=Prof. --data-urlencode timetable_number=25 --data-urlencode "subject_ids[]=1" --data-urlencode "subject_ids[]=$FP")"
-check "…saved"                                              "25 2" "$(SQL "SELECT CONCAT(tp.timetable_number,' ',(SELECT COUNT(*) FROM teacher_subjects WHERE teacher_id=$AGIM)) FROM teacher_profiles tp WHERE tp.user_id=$AGIM")"
-check "number 25 for another teacher → 422"                 "422 " "$(post $A /admin/perdoruesit/$ENVER/ndrysho /admin/perdoruesit/$ENVER/ndrysho --data-urlencode first_name=Enver --data-urlencode last_name=Bajrami --data-urlencode timetable_number=25)"
+check "teacher: number 99 and two subjects"                 "302 /admin/perdoruesit/$DEMO_T/ndrysho" "$(post $A /admin/perdoruesit/$DEMO_T/ndrysho /admin/perdoruesit/$DEMO_T/ndrysho --data-urlencode first_name=Demo --data "last_name=Gjuh%C3%AB%20shqipe%201" --data-urlencode weekly_norm=20 --data-urlencode timetable_number=99 --data-urlencode "subject_ids[]=1" --data-urlencode "subject_ids[]=$FP")"
+check "…saved"                                              "99 2" "$(SQL "SELECT CONCAT(tp.timetable_number,' ',(SELECT COUNT(*) FROM teacher_subjects WHERE teacher_id=$DEMO_T)) FROM teacher_profiles tp WHERE tp.user_id=$DEMO_T")"
+check "number 99 for another teacher → 422"                 "422 " "$(post $A /admin/perdoruesit/$ENVER/ndrysho /admin/perdoruesit/$ENVER/ndrysho --data-urlencode first_name=Enver --data-urlencode last_name=Bajrami --data-urlencode weekly_norm=20 --data-urlencode timetable_number=99)"
 contains "…says whose it is"                                "$T/body" "Ky numër në orar i përket një mësimdhënësi tjetër."
-check "number 1000 → 422"                                   "422 " "$(post $A /admin/perdoruesit/$ENVER/ndrysho /admin/perdoruesit/$ENVER/ndrysho --data-urlencode first_name=Enver --data-urlencode last_name=Bajrami --data-urlencode timetable_number=1000)"
+check "number 1000 → 422"                                   "422 " "$(post $A /admin/perdoruesit/$ENVER/ndrysho /admin/perdoruesit/$ENVER/ndrysho --data-urlencode first_name=Enver --data-urlencode last_name=Bajrami --data-urlencode weekly_norm=20 --data-urlencode timetable_number=1000)"
 code $A /admin/klasat/$XII1 >/dev/null
 contains "class page offers the subject's teachers first"   "$T/body" 'optgroup label="Japin Matematikë"'
 code $A /admin/mesimdhenesit >/dev/null
-contains "teacher list shows the subjects"                  "$T/body" "Shqip, Filoz."
+check "a norm of 0 lessons → 422"                            "422 " "$(post $A /admin/perdoruesit/$DEMO_T/ndrysho /admin/perdoruesit/$DEMO_T/ndrysho --data-urlencode first_name=Demo --data "last_name=Gjuh%C3%AB%20shqipe%201" --data-urlencode weekly_norm=0 --data-urlencode timetable_number=99)"
+contains "…explains the norm"                               "$T/body" "nga 1 deri në 40"
+DLOAD=$(SQL "SELECT SUM(COALESCE(cs.weekly_hours, gs.weekly_hours)) FROM class_subjects cs JOIN classes c ON c.id=cs.class_id LEFT JOIN grade_subjects gs ON gs.grade_level=c.grade_level AND gs.subject_id=cs.subject_id WHERE cs.teacher_id=$DEMO_T AND c.academic_year_id=$YEAR")
+check "half norm (10 lessons) for a teacher with $DLOAD"           "302 /admin/perdoruesit/$DEMO_T/ndrysho" "$(post $A /admin/perdoruesit/$DEMO_T/ndrysho /admin/perdoruesit/$DEMO_T/ndrysho --data-urlencode first_name=Demo --data "last_name=Gjuh%C3%AB%20shqipe%201" --data-urlencode weekly_norm=10 --data-urlencode timetable_number=99 --data-urlencode "subject_ids[]=1" --data-urlencode "subject_ids[]=$FP")"
+code $A /admin/perdoruesit/$DEMO_T/ndrysho >/dev/null
+contains "…the teacher's page shows load against norm"      "$T/body" "$DLOAD nga 10 orë në javë"
+contains "teacher list shows the subjects"                  "$(code $A '/admin/mesimdhenesit?q=demo.gjuheshqipe1' >/dev/null; echo $T/body)" "Shqip, Filoz."
+contains "…and flags the teacher above their norm"           "$T/body" "$DLOAD / 10 · mbi normë"
 
 echo; echo "== School years =="
 check "years page"                                          "200" "$(code $A /admin/vitet-shkollore)"

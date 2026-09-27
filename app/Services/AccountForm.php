@@ -37,6 +37,7 @@ final class AccountForm
             'bio'              => $request->string('bio'),
             'show_on_website'  => $request->input('show_on_website') === '1',
             'timetable_number' => $request->string('timetable_number'),
+            'weekly_norm'      => $request->string('weekly_norm'),
             'subject_ids'      => $request->ids('subject_ids'),
             'issue_slip'       => $request->input('issue_slip') === '1',
         ];
@@ -49,7 +50,7 @@ final class AccountForm
             'first_name' => '', 'last_name' => '', 'email' => '', 'phone' => '', 'class_id' => '',
             'student_number' => '', 'date_of_birth' => '', 'gender' => '', 'title' => 'Prof.',
             'specialization' => '', 'bio' => '', 'show_on_website' => true,
-            'timetable_number' => '', 'subject_ids' => [], 'issue_slip' => true,
+            'timetable_number' => '', 'weekly_norm' => '20', 'subject_ids' => [], 'issue_slip' => true,
         ];
     }
 
@@ -70,6 +71,7 @@ final class AccountForm
             'bio'              => (string) $user['bio'],
             'show_on_website'  => (int) ($user['show_on_website'] ?? 0) === 1,
             'timetable_number' => $user['timetable_number'] !== null ? (string) $user['timetable_number'] : '',
+            'weekly_norm'      => (string) ($user['weekly_norm'] ?? 20),
             'subject_ids'      => $user['role'] === 'teacher' ? TeacherSubject::forTeacher((int) $user['id']) : [],
             'issue_slip'       => false,
         ];
@@ -111,6 +113,8 @@ final class AccountForm
               ->maxLength('bio', 2000, 'Përshkrimi mund të ketë deri në 2000 karaktere.')
               ->rule('timetable_number', $validNumber, 'Shkruani një numër nga 1 deri në 999, ose lëreni bosh.')
               ->rule('timetable_number', !$validNumber || $number === '' || !TeacherProfile::numberTaken((int) $number, $userId), 'Ky numër në orar i përket një mësimdhënësi tjetër.')
+              ->rule('weekly_norm', ctype_digit($values['weekly_norm']) && (int) $values['weekly_norm'] >= 1 && (int) $values['weekly_norm'] <= 40,
+                     'Shkruani normën si numër orësh në javë, nga 1 deri në 40 (norma e plotë është 20).')
               ->rule('subject_ids', array_diff($values['subject_ids'], Subject::ids()) === [], 'Zgjidhni lëndët nga lista.');
         }
 

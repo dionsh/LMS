@@ -14,3 +14,8 @@ Thumbs.db
 .DS_Store
 .vscode/
 .idea/
+
+# Source photos of school documents (staff names). Their content is
+# transcribed into database/demo/ and they are kept only on this machine.
+/images/orari.jpg
+/images/legend_proffesors.jpg

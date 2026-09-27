@@ -282,7 +282,7 @@ erDiagram
     - A new class automatically gets one `class_subjects` row per subject of its grade.
     - A subject added to a grade's curriculum is added to every class of that grade. A subject taken out leaves a class only if nothing depends on it yet (no teacher, timetable or marks).
 13. **Weekly hours are inherited.** `class_subjects.weekly_hours` is NULL when the class follows the curriculum. A number there is a class-specific exception. Changing the curriculum therefore updates every class that follows it.
-14. **Teachers' subjects and numbers.** `teacher_subjects` records what each teacher teaches. Those teachers are offered first when a subject is assigned in a class, but the list does not restrict the choice. `teacher_profiles.timetable_number` is the teacher's number on the school's printed timetable, where cells show "25" instead of a name. It is unique, and optional.
+14. **Teachers' subjects, numbers and norm.** `teacher_subjects` records what each teacher teaches. Those teachers are offered first when a subject is assigned in a class, but the list does not restrict the choice. `teacher_profiles.timetable_number` is the teacher's number on the school's printed timetable, where cells show "25" instead of a name. It is unique, and optional. `teacher_profiles.weekly_norm` is the lessons a week a teacher is employed for: 20 for a full norm. The admin sees each teacher's load against it, and a teacher above it is flagged, not refused.
 15. **One class per room and shift.** A class's own room (`classes.home_room_id`) can be shared by a morning and an afternoon class, never by two classes in the same shift (checked when saving a class).
 
 ### 7.4 Verified behaviour
@@ -730,17 +730,38 @@ Greeting by hour: Mirëmëngjes (< 12:00) · Mirëdita (< 18:00) · Mirëmbrëma
 2. **Only the administration edits the timetable.** Teachers see theirs read-only.
 3. **Two semesters** (*Gjysmëvjetori i parë / i dytë*).
 4. **Bell schedule.** Two shifts of six 45-minute lessons. The morning starts at 08:00 and the afternoon at 14:00. Breaks are 5 minutes, except two 10-minute main breaks after the 2nd and the 4th lesson (seeded in `lesson_periods`).
-5. **School structure.** Three grades — X, XI, XII. Classes are written **XII-1, XI-5, X-13**, as on the school's official timetable. (They were written X/13 until 27 Sep 2026.) The morning shift has **XI-1 … XI-7 and XII-1 … XII-15**; grade X is in the afternoon. That is well over a thousand students, so every admin list is searchable, filterable by grade and class, and paginated. Every class has a *kujdestar* (homeroom teacher). More grades and classes can be added from the admin panel.
+5. **School structure.** Three grades — X, XI, XII — with 15 classes each, written **XII-1, XI-5, X-13** as on the school's official timetable. (They were written X/13 until 27 Sep 2026.)
+   - Morning shift: **XI-1 … XI-7 and XII-1 … XII-15** (22 classes).
+   - Afternoon shift: **X-1 … X-15 and XI-8 … XI-15** (23 classes).
+
+   That is well over a thousand students, so every admin list is searchable, filterable by grade and class, and paginated. Every class has a *kujdestar* (homeroom teacher), who also teaches. More grades and classes can be added from the admin panel.
 6. **Terminology:** *Ballina*, *Mësimdhënësit*, *Dil*, and *Njoftimet* (announcements) vs *Lajmërimet* (personal notifications).
 7. **Brand assets.**
    - `images/logo1.png` is the only logo file; no vector original exists. The SVG mark rebuilt from it (§11.9) is the logo used everywhere.
    - There are no higher-resolution photos of the school. The public site therefore leads with typography and the logo's line motif. The one photo (640×480) appears only behind dark overlays, never as a sharp full-bleed image.
    - The sign-in slogan *"Dija ndërtohet bashkë."* is approved for now.
-8. **Subjects** (27 Sep 2026). Every grade studies Gjuhë shqipe, Gjuhë angleze, Gjuhë gjermane, Matematikë, Kimi, Biologji, Fizikë, Edukatë fizike, Mësim zgjedhor, Teknologji and Gjeografi. In addition:
-   - X: Muzikë, Art figurativ and Histori
-   - XI: Filozofi dhe psikologji
-   - XII: Astronomi
-9. **The official morning timetable** (*Orari i mësimit, Paradite, 2026/2027*, dated 21.09.2026, `images/orari.jpg`) confirms how lessons work:
+8. **Subjects and weekly hours** (27 Sep 2026). Every grade has **30 lessons a week** (6 a day × 5 days).
+
+   | Subject | X | XI | XII |
+   |---|:-:|:-:|:-:|
+   | Gjuhë shqipe | 3 | 3 | 4 |
+   | Gjuhë angleze | 2 | 2 | 2 |
+   | Gjuhë gjermane | 2 | 2 | 1 |
+   | Matematikë | 4 | 4 | 4 |
+   | Kimi | 2 | 3 | 3 |
+   | Biologji | 3 | 2 | 3 |
+   | Fizikë | 2 | 3 | 3 |
+   | Edukatë fizike | 2 | 2 | 2 |
+   | Mësim zgjedhor | 2 | 2 | 2 |
+   | Teknologji (TIK) | 2 | 1 | 2 |
+   | Gjeografi | 2 | 2 | 2 |
+   | Histori · Art figurativ · Muzikë | 2 · 1 · 1 | — | — |
+   | Filozofi · Psikologji | — | 2 · 2 | — |
+   | Astronomi | — | — | 2 |
+
+   Filozofi and Psikologji are two subjects. The timetable confirms it: XI classes have 13 subjects.
+10. **Teachers** (staff list 2026–2027). The school has 72 teachers, numbered 1–73; number 52 is empty, and 74–76 are marked "mz". The number is the one in the timetable's cells. A full teaching norm is **20 lessons a week**; part-time teachers have fewer (`teacher_profiles.weekly_norm`).
+9. **The official morning timetable** (*Orari i mësimit, Paradite, 2026/2027*, dated 21.09.2026; the photo is kept off the repository, its content is in `database/demo/`) confirms how lessons work:
    - every class has six lessons a day, Monday to Friday;
    - the printed seventh column is empty;
    - cells hold the teacher's number rather than a name;
@@ -757,9 +778,9 @@ Greeting by hour: Mirëmëngjes (< 12:00) · Mirëdita (< 18:00) · Mirëmbrëma
 
 ### Still open
 
-- **Weekly hours per subject** (the curriculum). Not given yet. The demo data uses placeholder hours that add up to 30 a week.
-- **The teacher-number legend** that belongs to the official timetable (number → teacher → subject). With it, the real morning timetable can be entered as printed.
-- **Number of classes in grade X** (the demo keeps 15) and the afternoon timetable.
+- **Which subject each teacher teaches** (number → subject). The school will send it. Until then the real morning timetable is kept as teacher numbers, and demo teachers stand in for the subjects.
+- **The afternoon timetable** (X-1…X-15, XI-8…XI-15), with its homeroom teachers and daily duty. The school will send it.
+- **"mz" (74–76)** on the staff list: what these numbers stand for.
 - **Credential delivery.** Printed slips work without any setup. Should the school also want them e-mailed, that needs the school's SMTP account.
 - **Real school details** (address, phone, e-mail, founding year, principal, about text, higher-resolution photos) are left empty in the DB until provided. Nothing is invented.
 

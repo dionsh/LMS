@@ -72,6 +72,7 @@ use App\Support\Format;
                 <tr>
                     <th scope="col">Mësimdhënësi</th>
                     <th scope="col">Lëndët</th>
+                    <th scope="col" class="num">Orë në javë</th>
                     <th scope="col">Kujdestar i klasës</th>
                     <th scope="col">Llogaria</th>
                     <th scope="col"><span class="visually-hidden">Veprime</span></th>
@@ -85,6 +86,14 @@ use App\Support\Format;
                             <span class="table__secondary"><?= e($teacher['username']) ?><?= $teacher['timetable_number'] !== null ? ' · Nr. ' . e($teacher['timetable_number']) : '' ?></span>
                         </td>
                         <td data-label="Lëndët"><?= $teacher['subjects'] !== null ? e($teacher['subjects']) : '<span class="meta">—</span>' ?></td>
+                        <td data-label="Orë në javë" class="num">
+                            <?php $load = (int) $teacher['weekly_load']; $norm = (int) $teacher['weekly_norm']; ?>
+                            <?php if ($load > $norm): ?>
+                                <span class="badge badge--warning"><?= e($load) ?> / <?= e($norm) ?> · mbi normë</span>
+                            <?php else: ?>
+                                <?= e($load) ?> <span class="meta">/ <?= e($norm) ?></span>
+                            <?php endif; ?>
+                        </td>
                         <td data-label="Kujdestar i klasës">
                             <?= $teacher['homeroom_class_id'] !== null
                                 ? '<span class="badge badge--ink badge--plain">' . e(Format::classLabel((int) $teacher['homeroom_grade'], (int) $teacher['homeroom_section'])) . '</span>'

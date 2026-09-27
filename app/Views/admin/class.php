@@ -15,7 +15,8 @@ use App\Support\Format;
 use App\Support\Labels;
 
 $label = Format::classLabel((int) $class['grade_level'], (int) $class['section']);
-$teacherName = static fn (array $t): string => ($t['timetable_number'] !== null ? $t['timetable_number'] . ' · ' : '') . $t['first_name'] . ' ' . $t['last_name'];
+$teacherName = static fn (array $t): string => ($t['timetable_number'] !== null ? $t['timetable_number'] . ' · ' : '')
+    . $t['first_name'] . ' ' . $t['last_name'] . ' · ' . $t['weekly_load'] . '/' . $t['weekly_norm'] . ' orë';
 $hoursTotal = 0;
 $missingTeacher = 0;
 $outside = [];
@@ -144,7 +145,7 @@ foreach ($subjects as $subject) {
                     </tbody>
                 </table>
             </div>
-            <p class="field__hint assign-hint" id="hours-hint">Orë në javë: bosh = sipas planit mësimor (numri i zbehtë). Shkruani një numër vetëm kur kjo klasë ka orë të tjera.</p>
+            <p class="field__hint assign-hint" id="hours-hint">Orë në javë: bosh = sipas planit mësimor (numri i zbehtë). Shkruani një numër vetëm kur kjo klasë ka orë të tjera. Te mësimdhënësit, “18/20 orë” = orët që jep tani këtë vit / norma e tij.</p>
             <div class="form-actions">
                 <button class="btn btn--primary" type="submit">Ruaj mësimdhënësit</button>
             </div>

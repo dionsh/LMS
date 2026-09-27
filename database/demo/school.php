@@ -3,13 +3,16 @@
 declare(strict_types=1);
 
 /*
- * DEVELOPMENT ONLY — fills the current school year with the school's structure
- * from database/demo/school-data.php:
- *   - 37 classes (X-1…X-15 afternoon; XI-1…XI-7, XII-1…XII-15 morning), each
- *     with its grade's subjects and a homeroom teacher;
- *   - 80 teachers (records without sign-in credentials): the 22 real homeroom
- *     teachers of the morning shift and 58 placeholders who teach every class;
- *   - demo weekly hours wherever the curriculum has none yet;
+ * DEVELOPMENT ONLY — fills the current school year from database/demo/:
+ *   - 45 classes (X-1…X-15 and XI-8…XI-15 afternoon; XI-1…XI-7 and
+ *     XII-1…XII-15 morning), each with its grade's subjects (seed.sql);
+ *   - the school's 72 teachers with their timetable numbers (staff.php),
+ *     records without sign-in credentials, and the morning classes' real
+ *     homeroom teachers;
+ *   - DEMO teachers ("Demo Matematikë 1" …) for every subject whose real
+ *     teacher is not known yet, at most 20 lessons a week each, and for the
+ *     afternoon classes' homerooms;
+ *   - a demo timetable for every class that has none;
  *   - 10 student accounts enrolled in X-13, XI-5 and XII-1.
  *
  *   php database/demo/school.php
@@ -21,7 +24,6 @@ declare(strict_types=1);
 use App\Core\Database;
 use App\Models\AcademicYear;
 use App\Models\ClassSubject;
-use App\Models\Curriculum;
 use App\Models\Enrollment;
 use App\Models\GradeLevel;
 use App\Models\LessonPeriod;
@@ -140,6 +142,7 @@ function buildTimetables(int $yearId): void
 }
 
 $data = require __DIR__ . '/school-data.php';
+$staff = require __DIR__ . '/staff.php';
 $year = AcademicYear::current() ?? exit("Mungon viti shkollor aktual (seed.sql).\n");
 $yearId = (int) $year['id'];
 $subjectIds = array_column(Subject::options(), 'id', 'name');
@@ -148,9 +151,12 @@ $subjectIds = array_column(Subject::options(), 'id', 'name');
  * The teacher's id — an existing record is reused untouched (edits made in the
  * admin panel survive a re-run); otherwise it is created without credentials.
  */
-$teacher = static function (string $first, string $last, bool $real): int {
+$teacher = static function (string $first, string $last, bool $real, ?int $number = null): int {
     $existing = User::findByName('teacher', $first, $last);
     if ($existing !== null) {
+        if ($number !== null) {
+            TeacherProfile::setNumberIfMissing((int) $existing['id'], $number);
+        }
         return (int) $existing['id'];
     }
 
@@ -161,54 +167,34 @@ $teacher = static function (string $first, string $last, bool $real): int {
         'last_name'  => $last,
         'password'   => null,                    // no sign-in until the admin issues a login slip
     ]);
-    TeacherProfile::save($id, 'Prof.', showOnWebsite: $real);
+    TeacherProfile::save($id, $real ? 'Prof.' : null, showOnWebsite: $real, timetableNumber: $number);
 
     return $id;
 };
 
-Database::transaction(static function () use ($data, $yearId, $teacher, $subjectIds): void {
-    // 1. Demo weekly hours, only where the curriculum has none yet
-    foreach ($data['demo_hours'] as $grade => $hours) {
-        foreach ($hours as $subject => $count) {
-            Curriculum::setHoursIfEmpty($grade, (int) $subjectIds[$subject], $count);
-        }
-    }
-
-    // 2. Classes in their grade's shift, each with the grade's subjects
-    $shifts = GradeLevel::shifts();
+Database::transaction(static function () use ($data, $staff, $yearId, $teacher, $subjectIds): void {
+    // 1. Classes in their shift, each with its grade's subjects
     $classes = [];
-    foreach ($data['classes'] as $grade => $count) {
-        for ($section = 1; $section <= $count; $section++) {
-            $classes[$grade][$section] = SchoolClass::findOrCreate($yearId, $grade, $section, $shifts[$grade]);
+    foreach ($data['classes'] as [$grade, $from, $to, $shift]) {
+        for ($section = $from; $section <= $to; $section++) {
+            $classes[$grade][$section] = SchoolClass::findOrCreate($yearId, $grade, $section, $shift);
         }
     }
     ClassSubject::addFromCurriculum($yearId);
 
-    // 3. Homeroom teachers: the 22 real ones of the morning shift…
-    foreach ($data['real_homerooms'] as [$first, $last, $grade, $section]) {
-        SchoolClass::setHomeroomTeacher($classes[$grade][$section], $teacher($first, $last, true));
-    }
-
-    // …and placeholders (with their subjects) for the classes still without one
-    $open = [];
-    foreach ($classes as $grade => $sections) {
-        foreach ($sections as $section => $classId) {
-            if (!in_array([$grade, $section], array_map(static fn (array $h): array => [$h[2], $h[3]], $data['real_homerooms']), true)) {
-                $open[] = $classId;
-            }
-        }
-    }
-
-    $placeholders = [];
-    foreach ($data['placeholder_teachers'] as $index => [$first, $last, $subjects]) {
-        $id = $teacher($first, $last, false);
-        if (TeacherSubject::forTeacher($id) === []) {
+    // 2. The school's teachers with their timetable numbers (and subjects, once known)
+    $byNumber = [];
+    foreach ($staff as $number => [$first, $last, $subjects]) {
+        $id = TeacherProfile::teacherByNumber($number) ?? $teacher($first, $last, true, $number);
+        if ($subjects !== [] && TeacherSubject::forTeacher($id) === []) {
             TeacherSubject::save($id, array_map(static fn (string $name): int => (int) $subjectIds[$name], $subjects));
         }
-        if (isset($open[$index])) {
-            SchoolClass::setHomeroomTeacher($open[$index], $id);
-        }
-        $placeholders[] = $id;
+        $byNumber[$number] = $id;
+    }
+
+    // 3. Homeroom teachers of the morning classes (official timetable)
+    foreach ($data['homerooms'] as [$grade, $section, $number]) {
+        SchoolClass::setHomeroomTeacher($classes[$grade][$section], $byNumber[$number]);
     }
 
     // 4. Who teaches what. The test teacher account first (if it exists)…
@@ -226,33 +212,61 @@ Database::transaction(static function () use ($data, $yearId, $teacher, $subject
         unset($row);
     }
 
-    // …then every subject still without a teacher goes to the least-loaded placeholder who teaches it
-    $load = array_fill_keys($placeholders, 0);
-    $teaches = [];
-    foreach ($placeholders as $id) {
-        foreach (TeacherSubject::forTeacher($id) as $subjectId) {
-            $teaches[$subjectId][] = $id;
+    // …then every subject still without a teacher goes to a DEMO teacher of that subject
+    // with room left under the norm ("Demo Matematikë 1", "Demo Matematikë 2", …)
+    $load = [];
+    foreach ($rows as $row) {
+        if ($row['teacher_id'] !== null) {
+            $load[(int) $row['teacher_id']] = ($load[(int) $row['teacher_id']] ?? 0) + (int) $row['hours'];
         }
     }
+    $demo = [];   // subject id => [teacher id, …]
     foreach ($rows as $row) {
-        if ($row['teacher_id'] !== null && isset($load[(int) $row['teacher_id']])) {
-            $load[(int) $row['teacher_id']] += (int) $row['hours'];
-        }
-    }
-    foreach ($rows as $row) {
-        $candidates = $teaches[(int) $row['subject_id']] ?? [];
-        if ($row['teacher_id'] !== null || $candidates === []) {
+        if ($row['teacher_id'] !== null) {
             continue;
         }
-        usort($candidates, static fn (int $a, int $b): int => [$load[$a], $a] <=> [$load[$b], $b]);
-        ClassSubject::setTeacher((int) $row['id'], $candidates[0]);
-        $load[$candidates[0]] += (int) $row['hours'];
+        $subjectId = (int) $row['subject_id'];
+        $chosen = null;
+        for ($n = 1; $chosen === null; $n++) {
+            $id = $demo[$subjectId][$n - 1] ?? null;
+            if ($id === null) {
+                $id = $teacher('Demo', $row['subject_name'] . ' ' . $n, false);
+                TeacherSubject::save($id, [$subjectId]);
+                $demo[$subjectId][] = $id;
+            }
+            if (($load[$id] ?? 0) + (int) $row['hours'] <= $data['demo_norm']) {
+                $chosen = $id;
+            }
+        }
+        ClassSubject::setTeacher((int) $row['id'], $chosen);
+        $load[$chosen] = ($load[$chosen] ?? 0) + (int) $row['hours'];
     }
 
-    // 5. A demo timetable for every class that has none yet
+    // 5. Classes still without a homeroom teacher (the afternoon ones) get one of their demo teachers
+    $homeroomOf = [];
+    foreach (SchoolClass::overview($yearId) as $class) {
+        if ($class['teacher_id'] !== null) {
+            $homeroomOf[(int) $class['teacher_id']] = true;
+        }
+    }
+    foreach (SchoolClass::overview($yearId) as $class) {
+        if ($class['teacher_id'] !== null) {
+            continue;
+        }
+        foreach (ClassSubject::forClass((int) $class['id']) as $subject) {
+            $candidate = $subject['teacher_id'] !== null ? (int) $subject['teacher_id'] : null;
+            if ($candidate !== null && $subject['teacher_first_name'] === 'Demo' && !isset($homeroomOf[$candidate])) {
+                SchoolClass::setHomeroomTeacher((int) $class['id'], $candidate);
+                $homeroomOf[$candidate] = true;
+                break;
+            }
+        }
+    }
+
+    // 6. A demo timetable for every class that has none yet
     buildTimetables($yearId);
 
-    // 6. Student accounts, enrolled in their class
+    // 7. Student accounts, enrolled in their class
     foreach ($data['students'] as [$first, $last, $grade, $section, $born, $gender]) {
         $existing = User::findByName('student', $first, $last);
         if ($existing === null) {

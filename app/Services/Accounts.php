@@ -116,6 +116,7 @@ final class Accounts
                 $values['specialization'] !== '' ? $values['specialization'] : null,
                 $values['bio'] !== '' ? $values['bio'] : null,
                 AccountForm::timetableNumber($values),
+                (int) $values['weekly_norm'],
             );
             TeacherSubject::save($id, $values['subject_ids']);
         }

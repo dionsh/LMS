@@ -123,10 +123,13 @@ contains "…a morning grid"                                   "$T/body" "Orari 
 contains "…and an afternoon grid"                            "$T/body" "Orari javor · pasdite"
 contains "…lessons show the class"                           "$T/body" "X-13"
 contains "…read-only"                                        "$T/body" "Orari është i administratës"
-code $M "/mesimdhenesi/orari?tani=2026-09-28T14:20" >/dev/null
-contains "Monday 14:20: next is the afternoon class"         "$T/body" "Në vazhdim · Ora 2 · 14:50–15:35"
+# The test teacher's first afternoon lesson of the week; at 13:50 that day the morning is over
+read -r AD AP AS AE <<< "$(SQL "SELECT se.day_of_week, se.period_number, TIME_FORMAT(p.starts_at,'%H:%i'), TIME_FORMAT(p.ends_at,'%H:%i') FROM schedule_entries se JOIN classes c ON c.id=se.class_id JOIN class_subjects cs ON cs.id=se.class_subject_id JOIN lesson_periods p ON p.shift=c.shift AND p.number=se.period_number WHERE cs.teacher_id=$TEACHER AND c.shift=2 ORDER BY se.day_of_week, se.period_number LIMIT 1")"
+AFTERNOON="2026-09-$((27 + AD))T13:50"
+code $M "/mesimdhenesi/orari?tani=$AFTERNOON" >/dev/null
+contains "13:50: next is the afternoon class"               "$T/body" "Në vazhdim · Ora $AP · $AS–$AE"
 contains "…X-13"                                             "$T/body" 'id="now-title">X-13<'
-check "teacher dashboard at Monday 14:20"                    "200" "$(code $M '/mesimdhenesi?tani=2026-09-28T14:20')"
+check "teacher dashboard that day at 13:50"                 "200" "$(code $M "/mesimdhenesi?tani=$AFTERNOON")"
 contains "…today's lessons"                                  "$T/body" "Orët e sotme"
 contains "…with the afternoon class"                         "$T/body" "X-13"
 

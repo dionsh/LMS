@@ -16,7 +16,7 @@ restore() {
   SQL "DELETE FROM schedule_entries;
        DELETE FROM notifications WHERE type = 'schedule.changed';
        DELETE FROM rooms WHERE name LIKE 'Test%';
-       UPDATE teacher_profiles SET timetable_number = NULL;
+       UPDATE teacher_profiles SET timetable_number = NULL WHERE timetable_number >= 90;
        DELETE tp FROM teacher_profiles tp JOIN users u ON u.id = tp.user_id WHERE u.username = 'prove.mesimdhenes';
        DELETE FROM lesson_periods;
        INSERT INTO lesson_periods (shift, number, starts_at, ends_at) VALUES
@@ -69,7 +69,7 @@ check "teacher cannot save a class's week"                   "403 " "$(post $M /
 check "saving without CSRF token is refused"                 "403" "$(curl -s -o /dev/null -w '%{http_code}' -b $A --data "cell[1][1]=$MAT_XII1" $B/admin/orari/klasa/$XII1)"
 
 echo; echo "== The demo timetable =="
-check "1110 lessons: 37 classes × 30"                        "1110" "$(SQL "SELECT COUNT(*) FROM schedule_entries")"
+check "1350 lessons: 45 classes × 30"                        "1350" "$(SQL "SELECT COUNT(*) FROM schedule_entries")"
 check "every class has 6 lessons a day, Monday to Friday"   "6" "$(SQL "SELECT GROUP_CONCAT(DISTINCT n) FROM (SELECT class_id, day_of_week, COUNT(*) n FROM schedule_entries GROUP BY class_id, day_of_week) x")"
 check "every subject as often as its weekly hours"           "0" "$(SQL "SELECT COUNT(*) FROM class_subjects cs JOIN classes c ON c.id=cs.class_id LEFT JOIN grade_subjects gs ON gs.grade_level=c.grade_level AND gs.subject_id=cs.subject_id WHERE COALESCE(cs.weekly_hours, gs.weekly_hours) <> (SELECT COUNT(*) FROM schedule_entries se WHERE se.class_subject_id=cs.id)")"
 check "no subject more than twice a day"                     "0" "$(SQL "SELECT COUNT(*) FROM (SELECT class_subject_id, day_of_week FROM schedule_entries GROUP BY 1,2 HAVING COUNT(*) > 2) x")"
@@ -88,13 +88,13 @@ contains "…days across"                                      "$T/body" "e mër
 contains "…a print button"                                   "$T/body" "data-print"
 contains "…every class complete"                             "$T/body" "Çdo klasë e ka orarin e plotë."
 lacks "…and no clashes"                                      "$T/body" "përplasje në orar"
-check "afternoon sheet: the 15 X classes"                    "15" "$(code $A '/admin/orari?ndrrimi=2' >/dev/null; grep -c 'class="sheet__class"' $T/body)"
-SQL "UPDATE teacher_profiles tp JOIN users u ON u.id = tp.user_id SET tp.timetable_number = 25 WHERE u.username = 'prove.mesimdhenes'"
-SQL "INSERT IGNORE INTO teacher_profiles (user_id, show_on_website, timetable_number) SELECT id, 0, 25 FROM users WHERE username = 'prove.mesimdhenes'"
+check "afternoon sheet: X-1…15 and XI-8…15"                "23" "$(code $A '/admin/orari?ndrrimi=2' >/dev/null; grep -c 'class="sheet__class"' $T/body)"
+SQL "UPDATE teacher_profiles tp JOIN users u ON u.id = tp.user_id SET tp.timetable_number = 99 WHERE u.username = 'prove.mesimdhenes'"
+SQL "INSERT IGNORE INTO teacher_profiles (user_id, show_on_website, timetable_number) SELECT id, 0, 99 FROM users WHERE username = 'prove.mesimdhenes'"
 code $A '/admin/orari?ndrrimi=1&shfaq=mesimdhenesit' >/dev/null
-contains "teacher view: cells show the timetable number"     "$T/body" '<td class="sheet__cell[^"]*" title="[^"]*Matematikë · Provë Mësimdhënëse">25</td>'
+contains "teacher view: cells show the timetable number"     "$T/body" '<td class="sheet__cell[^"]*" title="[^"]*Matematikë · Provë Mësimdhënëse">99</td>'
 contains "…others show initials until they have one"          "$T/body" "Mësimdhënësit në orar"
-contains "…and the legend says who 25 is"                    "$T/body" 'sheet-legend__code">25<'
+contains "…and the legend says who 99 is"                    "$T/body" 'sheet-legend__code">99<'
 
 echo; echo "== One class's week =="
 check "unknown class → 404"                                  "404" "$(code $A /admin/orari/klasa/999999)"
@@ -171,7 +171,7 @@ check "remove it again"                                      "302 /admin/orari/o
 check "move the morning 5 minutes later (07:55 start)"       "302 /admin/orari/oret" "$(bells 1 --data-urlencode "starts[1]=7:55" --data-urlencode "ends[1]=08:40" --data-urlencode "starts[2]=08:50" --data-urlencode "ends[2]=09:35" --data-urlencode "starts[3]=09:45" --data-urlencode "ends[3]=10:30" --data-urlencode "starts[4]=10:35" --data-urlencode "ends[4]=11:20" --data-urlencode "starts[5]=11:30" --data-urlencode "ends[5]=12:15" --data-urlencode "starts[6]=12:20" --data-urlencode "ends[6]=13:05")"
 code $A /admin/orari/klasa/$XII1 >/dev/null
 contains "…every class's lessons follow"                     "$T/body" "07:55–08:40"
-check "…the timetable itself is untouched"                   "1110" "$(SQL "SELECT COUNT(*) FROM schedule_entries")"
+check "…the timetable itself is untouched"                   "1350" "$(SQL "SELECT COUNT(*) FROM schedule_entries")"
 # Clashes are judged by clock time: pull the afternoon's 1st period onto the morning's
 check "afternoon period 1 at 08:00 (overlaps the morning)"  "302 /admin/orari/oret" "$(bells 2 --data-urlencode "starts[1]=08:00" --data-urlencode "ends[1]=08:45" --data-urlencode "starts[2]=14:50" --data-urlencode "ends[2]=15:35" --data-urlencode "starts[3]=15:45" --data-urlencode "ends[3]=16:30" --data-urlencode "starts[4]=16:35" --data-urlencode "ends[4]=17:20" --data-urlencode "starts[5]=17:30" --data-urlencode "ends[5]=18:15" --data-urlencode "starts[6]=18:20" --data-urlencode "ends[6]=19:05")"
 EXPECTED=$(SQL "SELECT COUNT(*) FROM schedule_entries a JOIN classes ca ON ca.id=a.class_id JOIN class_subjects csa ON csa.id=a.class_subject_id JOIN schedule_entries b ON b.day_of_week=a.day_of_week JOIN classes cb ON cb.id=b.class_id JOIN class_subjects csb ON csb.id=b.class_subject_id WHERE ca.shift=1 AND a.period_number=1 AND cb.shift=2 AND b.period_number=1 AND csa.teacher_id=csb.teacher_id")

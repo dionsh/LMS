@@ -92,6 +92,13 @@ use App\Services\AccountForm;
                 <p class="field__hint" id="timetable_number-hint">Numri me të cilin mësimdhënësi shënohet në orarin e shtypur të shkollës, p.sh. 25. Opsional.</p>
                 <?= field_error($errors, 'timetable_number') ?>
             </div>
+            <div class="field">
+                <label class="field__label" for="weekly_norm">Norma javore (orë)</label>
+                <input class="input input--short" id="weekly_norm" name="weekly_norm" value="<?= e($values['weekly_norm']) ?>" inputmode="numeric" maxlength="2" autocomplete="off"
+                       <?= field_invalid($errors, 'weekly_norm', 'weekly_norm-hint') ?: ' aria-describedby="weekly_norm-hint"' ?>>
+                <p class="field__hint" id="weekly_norm-hint">Sa orë mësimi në javë jep sipas kontratës: 20 me normë të plotë, më pak me gjysmë norme.</p>
+                <?= field_error($errors, 'weekly_norm') ?>
+            </div>
         </div>
         <fieldset class="field">
             <legend class="field__label">Lëndët që jep</legend>
