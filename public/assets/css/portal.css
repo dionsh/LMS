@@ -654,6 +654,9 @@
 
 .now__next strong { color: var(--on-ink); }
 
+/* "Nothing left today" instead of the now/next card */
+.now-note .meta { margin-top: var(--space-2); }
+
 /* ================================================================ bottom tab bar (phones) */
 
 .tabbar {

@@ -356,12 +356,17 @@ Removing a teacher correctly un-assigned them and kept all marks. A subject that
 
 ### 9.1 Timetable (Orari)
 
-**Student view:**
-- Desktop: a week grid with days as columns and periods as rows, times shown.
-- Phone: day tabs with today pre-selected, e.g. *E premte* → Ora · Lënda · Mësimdhënësi · Salla.
-- The current lesson is highlighted, and there is a "Tani / Në vazhdim" (now / next) card.
+**Student view** (`/nxenesi/orari`, built in T09):
+- Desktop: a week grid with days as columns and periods as rows, times shown. Every lesson has its subject and teacher.
+- Phone: day tabs with today pre-selected (Monday at the weekend), e.g. *E premte* → Ora · Lënda · Mësimdhënësi.
+- The class stays in its own room, so a room is shown only for lessons held elsewhere.
+- The current lesson is highlighted, and there is a "Tani / Në vazhdim" (now / next) card. The same card and today's lessons are on the dashboard.
+- When the timetable changes, a note says so until the student presses *E pashë*. Nothing changes on GET.
+- *Lëndët* lists the subjects with their teacher, weekly hours and days.
 
-**Teacher view:** their week across all classes, **read-only**. The timetable belongs to the administration.
+**Teacher view** (`/mesimdhenesi/orari`): their week across all classes and both shifts, **read-only**. The timetable belongs to the administration. Lessons show the class ("XII-1") with the subject, and there is the same now/next card. *Klasat* lists what they teach, with one page per class-subject (its lessons and students), protected by `ClassSubjectPolicy` (someone else's → 404).
+
+**Checking a moment in development.** On a development machine, `?tani=2026-09-28T09:10` makes the timetable pages and dashboards behave as if it were that moment (`Support/Clock`). Production ignores it.
 
 **Admin view** (built in T08):
 - **The whole-school sheet** (`/admin/orari`), one per shift. It is laid out like the timetable printed for the notice board:
@@ -469,7 +474,7 @@ URLs are Albanian (without diacritics); code identifiers are English.
 | Path | Page |
 |---|---|
 | `/nxenesi` | Paneli |
-| `/nxenesi/orari` | Orari |
+| `/nxenesi/orari` (+ POST `/lexuar`) | Orari; dismiss the "timetable changed" note |
 | `/nxenesi/lendet` · `/nxenesi/lendet/{id}` | Lëndët · one subject (teacher, homework, marks) |
 | `/nxenesi/detyrat` · `/nxenesi/detyrat/{id}` (+ POST `/dorezo`) | Detyrat · detail & submit |
 | `/nxenesi/vleresimet` | upcoming tests/exams |
@@ -482,7 +487,7 @@ URLs are Albanian (without diacritics); code identifiers are English.
 |---|---|
 | `/mesimdhenesi` | Paneli |
 | `/mesimdhenesi/orari` | Orari (read-only) |
-| `/mesimdhenesi/klasat` · `/mesimdhenesi/klasat/{id}` | my class-subjects · overview |
+| `/mesimdhenesi/klasat` · `/mesimdhenesi/klasat/{id}` | my class-subjects · one class-subject: its lessons and students |
 | `/mesimdhenesi/klasat/{id}/ditari` | grade book, manual marks, term grades |
 | `/mesimdhenesi/klasat/{id}/nxenesit/{studentId}` | one student's performance |
 | `/mesimdhenesi/detyrat` · `/krijo` · `/{id}` · `/{id}/ndrysho` | assignments + submissions table |
@@ -510,6 +515,7 @@ URLs are Albanian (without diacritics); code identifiers are English.
 | `/admin/orari?ndrrimi=1\|2&shfaq=lendet\|mesimdhenesit` | the whole-school sheet per shift (subjects or teacher numbers), printable |
 | `/admin/orari/klasa/{id}` | one class's week: the timetable builder |
 | `/admin/orari/oret` (POST `/{shift}`) | bell schedule of both shifts |
+| `/admin/orari/mesimdhenesi/{id}` | one teacher's week, as the teacher sees it |
 | `/admin/detyrat` · `/admin/notat` | oversight of assignments · marks |
 | `/admin/lajmet` · `/admin/kategorite` | posts · categories |
 | `/admin/njoftimet` · `/admin/mesazhet` | announcements · contact inbox |

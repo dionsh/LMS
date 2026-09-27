@@ -41,7 +41,7 @@ $roles = ['nxenes' => 'Nxënës', 'mesimdhenes' => 'Mësimdhënës', 'admin' => 
         <p class="kicker kicker--on-ink">Tani · Ora <?= e($period) ?> · <?= e($periods[$period]['starts_at']) ?>–<?= e($periods[$period]['ends_at']) ?></p>
         <div>
             <h2 class="now__subject" id="now-title"><?= e($lesson['subject']) ?></h2>
-            <p class="now__meta"><?= e($lesson['teacher']) ?> · <?= e($lesson['room']) ?></p>
+            <p class="now__meta"><?= e(implode(' · ', $lesson['meta'])) ?></p>
         </div>
         <div>
             <progress class="progress" value="<?= e($minutes) ?>" max="45"><?= e($minutes) ?> nga 45 minuta</progress>
@@ -51,7 +51,7 @@ $roles = ['nxenes' => 'Nxënës', 'mesimdhenes' => 'Mësimdhënës', 'admin' => 
             <p class="now__next">
                 <span>Në vazhdim</span>
                 <strong><?= e($next['subject']) ?></strong>
-                <span>Ora <?= e($period + 1) ?> · <?= e($periods[$period + 1]['starts_at']) ?> · <?= e($next['room']) ?></span>
+                <span>Ora <?= e($period + 1) ?> · <?= e($periods[$period + 1]['starts_at']) ?> · <?= e($next['meta'][1]) ?></span>
             </p>
         <?php endif; ?>
     </section>

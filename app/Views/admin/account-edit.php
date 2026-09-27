@@ -77,6 +77,7 @@ $active = $account['status'] === 'active';
                 <?php if ($teaching === []): ?>
                     <p class="meta">Ende nuk i është caktuar asnjë lëndë në ndonjë klasë. Lëndët u caktohen mësimdhënësve te faqja e secilës klasë.</p>
                 <?php else: ?>
+                    <a class="link-arrow teaching-link" href="<?= e(url('/admin/orari/mesimdhenesi/' . $account['id'])) ?>">Orari javor <?= icon('arrow-right') ?></a>
                     <ul class="item-list" role="list">
                         <?php foreach ($teaching as $item): ?>
                             <li>

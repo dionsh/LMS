@@ -140,13 +140,26 @@ Legend: ✅ done · 🟡 partly done · 🔜 next · ⬜ planned
 
 ## Phase 3 — LMS core
 
-- ⬜ **T09 · Portal shells & timetable views**
+- ✅ **T09 · Portal shells & timetable views** — **done 27 Sep 2026**: `tests/schedule_views_test.sh` passes 69/69.
+  - Verified (with `?tani=` to set the moment, development only):
+    - at 09:10 on a Monday a student sees the lesson in progress, its teacher, the minutes left and what comes next;
+    - in the big break the student sees the next lesson; after school, "Mësimi për sot mbaroi"; at the weekend, "Mësimi rifillon të hënën", with Monday's tab open;
+    - a teacher at 14:20 sees their afternoon class as next, across shifts;
+    - a timetable change shows a note until the student presses "E pashë"; opening the page changes nothing;
+    - a teacher opening another teacher's class gets 404; roles cannot open each other's pages.
   - Deliverables:
-    - student *Orari*: week grid, day tabs on phones, now/next
-    - teacher *Orari* (read-only)
-    - *Lëndët* list and subject pages
+    - student *Orari*:
+      - the class's week with subject and teacher for every lesson;
+      - day tabs on phones (today first), week grid from 768 px;
+      - now/next, the "timetable changed" note, printable
+    - student *Lëndët*: subjects, teachers, weekly hours and days
+    - teacher *Orari* (read-only), across both shifts, with now/next; teacher *Klasat* and a page per class-subject (its lessons in the week and its students)
+    - dashboards: the now/next card and today's lessons (the rest of the dashboards stays in T15)
+    - admin: any teacher's week (`/admin/orari/mesimdhenesi/{id}`), linked from the teacher's page
+    - moved to T10: the page for one subject (`/nxenesi/lendet/{id}`), because it holds homework and marks
 - ⬜ **T10 · Assignments**
   - Deliverables:
+    - the student's page for one subject (teacher, lessons, homework), `/nxenesi/lendet/{id}`
     - teacher create / edit / draft / publish with attachments
     - student list and detail
     - secure file streaming (`/skedari/...`)

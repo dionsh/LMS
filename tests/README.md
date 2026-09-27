@@ -12,6 +12,7 @@ Run them from the project folder (Git Bash on Windows). They use the **local dev
 | `bash tests/structure_test.sh` | the academic structure: curriculum per grade (adding/removing a subject reaches every class of the grade, subjects in use stay), subjects, adding/editing/deleting classes and the rules behind them (unique sections, one homeroom class per teacher, one class per room and shift), who teaches what, rooms, teachers' subjects and timetable numbers, school years and the current year, the activity log (103 checks, restores the demo data afterwards) |
 
 | `bash tests/timetable_test.sh` | the timetable: the demo week (30 lessons per class, subjects as planned, no clashes, the same on every run), the whole-school sheet in both shifts and both views, the class editor refusing teacher and room clashes, sharing a room across shifts, clashes judged by clock time across shifts, planned vs scheduled hours, notifications without pile-up, the bell schedule rules (78 checks, restores the demo data afterwards) |
+| `bash tests/schedule_views_test.sh` | the timetable as students and teachers see it: the student's week and subjects, now/next at chosen moments (a lesson, the big break, after school, the weekend), the teacher's week across both shifts, the "timetable changed" note (GET changes nothing), a teacher's class pages and ownership (someone else's → 404), role separation, the admin's view of a teacher's week (69 checks, restores the demo data afterwards) |
 
 Every command exits with status 0 only when all checks pass.
 

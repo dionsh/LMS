@@ -32,7 +32,11 @@ use App\Controllers\Dev\StyleGuideController;
 use App\Controllers\Dev\SystemController;
 use App\Controllers\Site\HomeController;
 use App\Controllers\Student\DashboardController as StudentDashboard;
+use App\Controllers\Student\ScheduleController as StudentSchedule;
+use App\Controllers\Student\SubjectController as StudentSubjects;
+use App\Controllers\Teacher\ClassController as TeacherClasses;
 use App\Controllers\Teacher\DashboardController as TeacherDashboard;
+use App\Controllers\Teacher\ScheduleController as TeacherSchedule;
 use App\Core\Router;
 
 /** @var Router $router */
@@ -72,10 +76,16 @@ $router->group(['middleware' => ['auth', 'password.changed']], function (Router 
 // ---------------------------------------------------------------------
 $router->group(['prefix' => '/nxenesi', 'middleware' => ['auth', 'password.changed', 'role:student']], function (Router $r): void {
     $r->get('/', [StudentDashboard::class, 'index'], 'student.dashboard');
+    $r->get('/orari', [StudentSchedule::class, 'index'], 'student.schedule');
+    $r->post('/orari/lexuar', [StudentSchedule::class, 'dismiss'], 'student.schedule.dismiss');
+    $r->get('/lendet', [StudentSubjects::class, 'index'], 'student.subjects');
 });
 
 $router->group(['prefix' => '/mesimdhenesi', 'middleware' => ['auth', 'password.changed', 'role:teacher']], function (Router $r): void {
     $r->get('/', [TeacherDashboard::class, 'index'], 'teacher.dashboard');
+    $r->get('/orari', [TeacherSchedule::class, 'index'], 'teacher.schedule');
+    $r->get('/klasat', [TeacherClasses::class, 'index'], 'teacher.classes');
+    $r->get('/klasat/{id:\d+}', [TeacherClasses::class, 'show'], 'teacher.classes.show');
 });
 
 $router->group(['prefix' => '/admin', 'middleware' => ['auth', 'password.changed', 'role:admin']], function (Router $r): void {
@@ -97,6 +107,7 @@ $router->group(['prefix' => '/admin', 'middleware' => ['auth', 'password.changed
     $r->get('/orari', [AdminSchedule::class, 'index'], 'admin.schedule');
     $r->get('/orari/klasa/{id:\d+}', [AdminSchedule::class, 'edit'], 'admin.schedule.class');
     $r->post('/orari/klasa/{id:\d+}', [AdminSchedule::class, 'update'], 'admin.schedule.class.update');
+    $r->get('/orari/mesimdhenesi/{id:\d+}', [AdminSchedule::class, 'teacher'], 'admin.schedule.teacher');
     $r->get('/orari/oret', [AdminBells::class, 'edit'], 'admin.bells');
     $r->post('/orari/oret/{shift:\d+}', [AdminBells::class, 'update'], 'admin.bells.update');
 

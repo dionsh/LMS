@@ -1,9 +1,9 @@
 <?php
 /**
- * A class's week as a table (shown on screens ≥ 768px).
+ * A week as a table (shown on screens ≥ 768px): periods down, days across.
  *
  * @var array<int, array{number: int, starts_at: string, ends_at: string, break_after: ?int}> $periods  LessonPeriod::forShift()
- * @var array<int, array<int, ?array{subject: string, teacher: string, room: string}>>        $week     day => period => lesson
+ * @var array<int, array<int, ?array{subject: string, meta: list<string>}>>                  $week     day => period => lesson
  * @var int|null $today    ISO day to highlight
  * @var int|null $current  period number in progress today
  * @var string|null $caption
@@ -12,7 +12,7 @@
 use App\Support\Format;
 use App\Support\Labels;
 
-$days = [1, 2, 3, 4, 5];
+$days = Labels::SCHOOL_DAYS;
 $today = $today ?? null;
 $current = $current ?? null;
 ?>
@@ -44,8 +44,9 @@ $current = $current ?? null;
                         <td<?= $classes !== [] ? ' class="' . e(implode(' ', $classes)) . '"' : '' ?>>
                             <?php if ($lesson !== null): ?>
                                 <span class="timetable__subject"><?= e($lesson['subject']) ?></span>
-                                <span class="timetable__meta"><?= e($lesson['teacher']) ?></span>
-                                <span class="timetable__meta"><?= e($lesson['room']) ?></span>
+                                <?php foreach ($lesson['meta'] as $line): ?>
+                                    <span class="timetable__meta"><?= e($line) ?></span>
+                                <?php endforeach; ?>
                             <?php else: ?>
                                 <span class="timetable__free" aria-hidden="true">—</span>
                                 <span class="visually-hidden">Orë e lirë</span>

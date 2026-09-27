@@ -21,6 +21,17 @@ final class Labels
         7 => 'e diel',
     ];
 
+    /** "On Monday" etc., as used in a sentence: "Nuk keni orë të hënën." */
+    public const DAYS_ON = [
+        1 => 'të hënën',
+        2 => 'të martën',
+        3 => 'të mërkurën',
+        4 => 'të enjten',
+        5 => 'të premten',
+        6 => 'të shtunën',
+        7 => 'të dielën',
+    ];
+
     /** Short day names for tight spaces (day tabs on phones). */
     public const DAYS_SHORT = [
         1 => 'Hën',

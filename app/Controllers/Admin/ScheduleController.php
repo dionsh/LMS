@@ -14,7 +14,10 @@ use App\Models\LessonPeriod;
 use App\Models\Room;
 use App\Models\ScheduleEntry;
 use App\Models\SchoolClass;
+use App\Models\User;
 use App\Services\ScheduleService;
+use App\Services\TimetableView;
+use App\Support\Clock;
 use App\Support\Format;
 use App\Support\Labels;
 
@@ -103,6 +106,22 @@ final class ScheduleController extends AdminController
             : 'Orari i klasës ' . $label . ' nuk ndryshoi.');
 
         return redirect('/admin/orari/klasa/' . $id);
+    }
+
+    /** GET /admin/orari/mesimdhenesi/{id} — a teacher's week, as they see it */
+    public function teacher(int $id): Response
+    {
+        $teacher = User::details($id, $this->yearId());
+        if ($teacher === null || $teacher['role'] !== 'teacher') {
+            throw new HttpException(404);
+        }
+
+        return $this->page('admin/schedule-teacher', [
+            'title'   => 'Orari · ' . $teacher['first_name'] . ' ' . $teacher['last_name'],
+            'styles'  => ['timetable'],
+            'teacher' => $teacher,
+            'view'    => TimetableView::forTeacher($id, $this->yearId(), Clock::now()),
+        ], 'teachers');
     }
 
     private function findOrFail(int $id): array

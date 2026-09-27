@@ -41,7 +41,7 @@ final class DemoData
         5 => ['mat', 'ang', 'inf', 'fiz', 'his', null],
     ];
 
-    /** @return array<int, array<int, array{subject: string, teacher: string, room: string}|null>> day => period => lesson */
+    /** @return array<int, array<int, array{subject: string, meta: list<string>}|null>> day => period => lesson (teacher, room) */
     public static function week(): array
     {
         $week = [];
@@ -49,8 +49,7 @@ final class DemoData
             foreach ($codes as $index => $code) {
                 $week[$day][$index + 1] = $code === null ? null : [
                     'subject' => self::LESSONS[$code][0],
-                    'teacher' => self::LESSONS[$code][1],
-                    'room'    => self::LESSONS[$code][2],
+                    'meta'    => [self::LESSONS[$code][1], self::LESSONS[$code][2]],
                 ];
             }
         }

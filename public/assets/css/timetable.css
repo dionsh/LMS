@@ -178,6 +178,37 @@
 
 .class-chip:hover { border-color: var(--brand-strong); }
 
+/* ================================================================ student & teacher timetable pages */
+
+.schedule-section { margin-top: var(--space-7); }
+.schedule-note { max-width: 46rem; margin-top: var(--space-4); }
+.schedule-free { padding: var(--space-4); }
+.schedule-days .tab-panel { padding-top: var(--space-3); }
+
+.schedule-shift {
+    margin: var(--space-5) 0 var(--space-3);
+    color: var(--ink-3);
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: var(--tracking-kicker);
+    text-transform: uppercase;
+}
+
+.schedule-shift:first-child { margin-top: 0; }
+
+.roster {
+    margin: 0;
+    padding-left: 1.6rem;
+    columns: 2 14rem;
+    column-gap: var(--space-6);
+}
+
+.roster li { padding-block: .3rem; break-inside: avoid; }
+
+.teaching-link { margin-bottom: var(--space-4); }
+.subjects-homeroom { margin-bottom: var(--space-5); }
+
 /* ================================================================ one class's week (editor) */
 
 .timetable--edit { min-width: 66rem; }
@@ -286,6 +317,17 @@
     .sheet tr { break-inside: avoid; }
 
     .sheet-legend { margin-top: 4mm; break-inside: avoid; }
+
+    /* A class's or a teacher's week: the full grid, never the day tabs */
+    .schedule-week { display: block !important; }
+    .schedule-days { display: none !important; }
+    .schedule-section { margin-top: 0; }
+    .schedule-section .section-head { display: none; }
+    .schedule-print-title { margin-bottom: 3mm; font-size: 11pt; font-weight: 700; }
+    .timetable { min-width: 0; font-size: 8pt; }
+    .timetable th, .timetable td { padding: 1.2mm; border-color: #666; }
+    .timetable .is-today { background: none; }
+    .timetable td.is-current { box-shadow: none; }
     .sheet-legend__title { font-size: 10pt; }
     .sheet-legend__list { grid-template-columns: repeat(4, minmax(0, 1fr)); font-size: 7pt; gap: .5mm 4mm; }
 }
