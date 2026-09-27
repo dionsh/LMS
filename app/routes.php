@@ -14,10 +14,12 @@ declare(strict_types=1);
  */
 
 use App\Controllers\Account\ProfileController;
+use App\Controllers\Admin\BellScheduleController as AdminBells;
 use App\Controllers\Admin\ClassController as AdminClasses;
 use App\Controllers\Admin\DashboardController as AdminDashboard;
 use App\Controllers\Admin\GradeController as AdminGrades;
 use App\Controllers\Admin\RoomController as AdminRooms;
+use App\Controllers\Admin\ScheduleController as AdminSchedule;
 use App\Controllers\Admin\SlipController as AdminSlips;
 use App\Controllers\Admin\StudentController as AdminStudents;
 use App\Controllers\Admin\SubjectController as AdminSubjects;
@@ -90,6 +92,13 @@ $router->group(['prefix' => '/admin', 'middleware' => ['auth', 'password.changed
     $r->post('/klasat/{id:\d+}/lendet', [AdminClasses::class, 'saveSubjects'], 'admin.classes.subjects');
     $r->post('/klasat/{id:\d+}/lendet/shto', [AdminClasses::class, 'addSubject'], 'admin.classes.subjects.add');
     $r->post('/klasat/{id:\d+}/lendet/hiq', [AdminClasses::class, 'removeSubject'], 'admin.classes.subjects.remove');
+
+    // Timetable: the whole school per shift, one class's week, the bell schedule
+    $r->get('/orari', [AdminSchedule::class, 'index'], 'admin.schedule');
+    $r->get('/orari/klasa/{id:\d+}', [AdminSchedule::class, 'edit'], 'admin.schedule.class');
+    $r->post('/orari/klasa/{id:\d+}', [AdminSchedule::class, 'update'], 'admin.schedule.class.update');
+    $r->get('/orari/oret', [AdminBells::class, 'edit'], 'admin.bells');
+    $r->post('/orari/oret/{shift:\d+}', [AdminBells::class, 'update'], 'admin.bells.update');
 
     // Curriculum: grades and the subjects they study
     $r->get('/plani-mesimor', [AdminGrades::class, 'index'], 'admin.grades');

@@ -889,6 +889,43 @@ a.item__title:hover { color: var(--brand-strong); }
 
 .tab-panel[hidden] { display: none; }
 
+/* Links that switch between views of the same page (e.g. morning / afternoon shift) */
+.segmented {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+}
+
+.segmented__item {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    min-height: 2.75rem;
+    padding: 0 var(--space-4);
+    border-radius: var(--radius);
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    text-decoration: none;
+    transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.segmented__item:hover { background: var(--paper); color: var(--ink); }
+
+.segmented__item[aria-current="page"] {
+    background: var(--ink);
+    color: var(--on-ink);
+}
+
+.segmented__count {
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+}
+
 /* ================================================================ timetable */
 
 /* One day as a list: time · period · subject · teacher · room */

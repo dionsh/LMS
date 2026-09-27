@@ -153,6 +153,31 @@ final class Request
     }
 
     /**
+     * A POST field sent as a two-level grid, e.g. cell[1][3]=12 (day 1, period 3):
+     * → [1 => [3 => '12']]. Only integer keys and string values survive, trimmed.
+     *
+     * @return array<int, array<int, string>>
+     */
+    public function grid(string $key): array
+    {
+        $rows = $this->body[$key] ?? [];
+        $result = [];
+
+        foreach (is_array($rows) ? $rows : [] as $row => $values) {
+            if (!is_int($row) || !is_array($values)) {
+                continue;
+            }
+            foreach ($values as $column => $value) {
+                if (is_int($column) && is_string($value)) {
+                    $result[$row][$column] = trim($value);
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * Ids from checkboxes named like subject_ids[]: only positive integers, no duplicates.
      *
      * @return list<int>

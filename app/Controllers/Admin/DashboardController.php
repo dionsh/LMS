@@ -27,6 +27,10 @@ final class DashboardController extends PortalController
         $grades = GradeLevel::overview($yearId);
         $gradesReady = count(array_filter($grades, static fn (array $g): bool => (int) $g['subjects'] > 0 && (int) $g['missing_hours'] === 0));
         [$subjects, $assigned] = ClassSubject::assignmentCounts($yearId);
+        $scheduled = count(array_filter(
+            SchoolClass::overview($yearId),
+            static fn (array $c): bool => (int) $c['lessons'] > 0 && (int) $c['lessons'] === (int) $c['planned_hours'],
+        ));
 
         return $this->page('admin/dashboard', [
             'title'              => 'Paneli',
@@ -37,12 +41,13 @@ final class DashboardController extends PortalController
             'withoutCredentials' => User::countWithoutCredentials(),
             'setup'              => [
                 ['Viti shkollor', $year !== null ? $year['name'] : 'Mungon', $year !== null, '/admin/vitet-shkollore'],
-                ['Orari i orëve', $periods . ' orë në dy ndërrime', $periods > 0, null],
+                ['Orët e mësimit', $periods . ' orë në dy ndërrime', $periods > 0, '/admin/orari/oret'],
                 ['Plani mësimor', $gradesReady . ' nga ' . count($grades) . ' klasa me lëndë dhe orë', $grades !== [] && $gradesReady === count($grades), '/admin/plani-mesimor'],
                 ['Mësimdhënësit', $users['teacher'] . ' mësimdhënës', $users['teacher'] > 0, '/admin/mesimdhenesit'],
                 ['Klasat', $classes . ' klasa', $classes > 0, '/admin/klasat'],
                 ['Kujdestarët e klasave', $withHomeroom . ' nga ' . $classes . ' klasa', $classes > 0 && $withHomeroom === $classes, '/admin/klasat'],
                 ['Lëndët me mësimdhënës', $assigned . ' nga ' . $subjects . ' lëndë në klasa', $subjects > 0 && $assigned === $subjects, '/admin/klasat'],
+                ['Orari i klasave', $scheduled . ' nga ' . $classes . ' klasa me orar të plotë', $classes > 0 && $scheduled === $classes, '/admin/orari'],
                 ['Nxënësit', $users['student'] . ' nxënës', $users['student'] > 0, '/admin/nxenesit'],
             ],
         ], 'dashboard');

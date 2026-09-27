@@ -44,6 +44,7 @@ foreach ($subjects as $subject) {
     </div>
     <div class="cluster">
         <a class="btn btn--secondary" href="<?= e(url('/admin/klasat/' . $class['id'] . '/ndrysho')) ?>"><?= icon('pencil') ?>Ndrysho klasën</a>
+        <a class="btn btn--primary" href="<?= e(url('/admin/orari/klasa/' . $class['id'])) ?>"><?= icon('calendar') ?>Orari i klasës</a>
     </div>
 </header>
 

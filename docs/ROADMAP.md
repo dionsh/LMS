@@ -112,15 +112,31 @@ Legend: ✅ done · 🟡 partly done · 🔜 next · ⬜ planned
     - demo weekly hours (30 a week, as on the timetable);
     - 10 student accounts in X-13, XI-5 and XII-1.
   - `tests/school_data_test.sh` passes 39/39.
-  - Still to come: the timetable (T08), sample work.
+  - Timetable (T08): a clash-free demo week for every class.
+  - Still to come: sample work (homework, tests, marks) with T10–T13.
   - Deliverable: `database/demo/` with a realistic test school (a few classes, ~8 teachers, ~60 students, timetable, sample work) so every later task can be tested properly. Test logins are recorded there, not in chat.
-- ⬜ **T08 · Timetable & bell schedule**
+- ✅ **T08 · Timetable & bell schedule** — **done 27 Sep 2026**: `tests/timetable_test.sh` passes 78/78.
+  - Verified:
+    - the demo timetable has 30 lessons for each of the 37 classes (6 a day), every subject exactly its weekly hours, no teacher or room clash;
+    - a teacher already in XI-5 cannot be put into XII-1 at the same time (422, named in the message, nothing saved);
+    - a room cannot hold two classes at once, while a morning and an afternoon class can use the same room;
+    - clashes are judged by clock time: moving the afternoon's first period onto the morning's makes exactly the expected 29 clashes appear;
+    - changing the bell times moves every class's lessons without touching the timetable;
+    - a period still in use cannot be removed; a 7th period can be added and appears in the editor and the sheet;
+    - saving a changed week notifies the class's students once (no pile-up), an unchanged week notifies no one;
+    - planned vs scheduled hours show on the editor, the class list and the sheet.
   - Deliverables:
-    - bell schedule editor for both shifts
-    - grid timetable builder per class (admin only)
-    - conflict detection (class, teacher by real time, room)
+    - **the whole-school sheet** (*Orari i mësimit*), per shift, laid out like the printed timetable:
+      - classes down the side, days × periods across, grade bands, homeroom teachers on the right;
+      - cells show the subject or, like the paper, the teacher's number (initials until numbers are entered), with a legend;
+      - prints on one A4 landscape page per shift;
+      - clash and completeness report
+    - grid timetable builder per class (admin only): subject per slot, optional room for lessons outside the class's room; busy teachers and rooms are marked in the lists
+    - clash detection by real clock time (teacher, room; one lesson per class and slot in the database)
+    - bell schedule editor for both shifts (24-hour times, add/remove periods)
     - planned-vs-scheduled hours
-    - students notified when their class's timetable changes
+    - students notified when their class's timetable changes (the bell list itself comes in T14)
+    - demo timetable for all 37 classes (seeded, the same on every run)
 
 ## Phase 3 — LMS core
 

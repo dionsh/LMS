@@ -25,6 +25,7 @@ Loads the 2026/2027 structure from `school-data.php`. It is safe to run again; n
   - 22 are the real homeroom teachers of XI and XII. They are shown on the public website. They do **not** teach in the demo, because the school has not yet said which subjects they teach.
   - 58 are **placeholders** with one or two subjects each. They teach every class, balanced to 12–25 lessons a week. They are hidden from the public website (`show_on_website = 0`) and will be replaced by the real staff list.
   - The test account `prove.mesimdhenes` teaches Matematikë in XII-1, XI-5 and X-13, so the teacher's pages have something to show.
+- **A demo timetable** for every class: each subject as many times a week as planned, at most twice a day, no teacher in two classes at once. It is generated with a fixed seed, so it is the same on every run. Classes that already have a timetable are left alone.
 - **Weekly hours are demo values.** The school's real plan has not been given yet. Each grade adds up to 30 lessons (6 a day × 5 days), matching the official timetable. They are only filled in where the curriculum has no hours, so hours entered under *Plani mësimor* are never overwritten.
 - **10 student accounts**, all with the password **`Nxenes-Demo-2026`**:
 

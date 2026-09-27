@@ -85,13 +85,15 @@ $withHomeroom = count(array_filter($all, static fn (array $c): bool => $c['teach
                                 <?php endif; ?>
                             </td>
                             <td data-label="Orari">
-                                <?php if ($lessons === 0): ?>
-                                    <span class="badge badge--plain">Pa orar</span>
-                                <?php elseif ($planned > 0 && $lessons === $planned): ?>
-                                    <span class="badge badge--success"><?= e($lessons) ?> orë në javë</span>
-                                <?php else: ?>
-                                    <span class="badge badge--warning"><?= e($lessons) ?><?= $planned > 0 ? ' nga ' . e($planned) : '' ?> orë</span>
-                                <?php endif; ?>
+                                <a class="table__link" href="<?= e(url('/admin/orari/klasa/' . $class['id'])) ?>">
+                                    <?php if ($lessons === 0): ?>
+                                        <span class="badge badge--plain">Pa orar</span>
+                                    <?php elseif ($planned > 0 && $lessons === $planned): ?>
+                                        <span class="badge badge--success"><?= e($lessons) ?> orë në javë</span>
+                                    <?php else: ?>
+                                        <span class="badge badge--warning"><?= e($lessons) ?><?= $planned > 0 ? ' nga ' . e($planned) : '' ?> orë</span>
+                                    <?php endif; ?>
+                                </a>
                             </td>
                             <td data-label="Nxënës" class="num"><?= e($class['students']) ?></td>
                         </tr>

@@ -363,12 +363,21 @@ Removing a teacher correctly un-assigned them and kept all marks. A subject that
 
 **Teacher view:** their week across all classes, **read-only**. The timetable belongs to the administration.
 
-**Admin view:**
-- A grid builder per class: click a cell, then pick the subject and room.
-- A bell-schedule editor for **both shifts** (morning and afternoon).
-- A **conflict report** (class slot taken, teacher double-booked, room double-booked).
-- A planned-vs-scheduled weekly hours check.
-- When a class's timetable changes, its students get a notification.
+**Admin view** (built in T08):
+- **The whole-school sheet** (`/admin/orari`), one per shift. It is laid out like the timetable printed for the notice board:
+  - classes down the side, grouped by grade;
+  - the five days × lesson periods across, with a heavier line between days;
+  - homeroom teachers on the right.
+
+  Cells show the subject's short name, or, as on the paper, the teacher's timetable number (initials until numbers are entered), with a legend. It prints on one A4 landscape page per shift, and lists clashes and classes whose week is incomplete.
+- A **grid builder per class**: a subject for every day × period of the class's shift.
+  - A room is chosen only for lessons held outside the class's own room.
+  - Teachers busy in another class at that time ("ka orë në XI-4") and rooms taken ("e zënë nga XII-1") are marked in the lists.
+  - Saving is refused with the reason named in each cell.
+- A bell-schedule editor for **both shifts** (24-hour times). A period still used by the timetable cannot be removed.
+- **Clashes** are judged by clock time, not period number. A teacher or a room can be in one place at a time. One lesson per class and slot is enforced by the database.
+- Planned-vs-scheduled weekly hours on the editor, the class list and the sheet.
+- When a class's timetable changes, its students get a notification (once, until they have read it).
 
 **Shifts.** Each class belongs to one shift, and lesson times come from that shift's bell schedule. If classes switch shifts during the year (e.g. per semester), the admin only changes the class's shift: the timetable keeps its periods and the times follow automatically.
 
@@ -498,7 +507,9 @@ URLs are Albanian (without diacritics); code identifiers are English.
 | `/admin/sallat` (+ `/{id}/ndrysho`) | rooms |
 | `/admin/klasat` (+ `/shto`, `/{id}/ndrysho`) | classes |
 | `/admin/klasat/{id}` (+ POST `/lendet`, `/lendet/shto`, `/lendet/hiq`) | one class: who teaches each subject and how many hours, its students |
-| `/admin/orari` · `/admin/orari/oret` | timetable builder · bell schedule |
+| `/admin/orari?ndrrimi=1\|2&shfaq=lendet\|mesimdhenesit` | the whole-school sheet per shift (subjects or teacher numbers), printable |
+| `/admin/orari/klasa/{id}` | one class's week: the timetable builder |
+| `/admin/orari/oret` (POST `/{shift}`) | bell schedule of both shifts |
 | `/admin/detyrat` · `/admin/notat` | oversight of assignments · marks |
 | `/admin/lajmet` · `/admin/kategorite` | posts · categories |
 | `/admin/njoftimet` · `/admin/mesazhet` | announcements · contact inbox |

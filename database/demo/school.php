@@ -24,6 +24,8 @@ use App\Models\ClassSubject;
 use App\Models\Curriculum;
 use App\Models\Enrollment;
 use App\Models\GradeLevel;
+use App\Models\LessonPeriod;
+use App\Models\ScheduleEntry;
 use App\Models\SchoolClass;
 use App\Models\StudentProfile;
 use App\Models\Subject;
@@ -32,6 +34,7 @@ use App\Models\TeacherSubject;
 use App\Models\User;
 use App\Services\Usernames;
 use App\Support\Format;
+use App\Support\Labels;
 
 if (PHP_SAPI !== 'cli') {
     http_response_code(404);
@@ -43,6 +46,97 @@ require dirname(__DIR__, 2) . '/app/bootstrap.php';
 if (config('app.env') !== 'development') {
     fwrite(STDERR, "Refuzohet: ky skript punon vetëm në mjedisin e zhvillimit (app.env = development).\n");
     exit(1);
+}
+
+/**
+ * Fill the week of every class without a timetable: each subject as many times
+ * as its weekly hours, at most twice a day, and never a teacher in two classes
+ * at overlapping clock times. The lesson with the fewest possible slots is
+ * placed first; a dead end starts the class again. The random numbers are
+ * seeded, so the demo timetable is the same on every machine.
+ */
+function buildTimetables(int $yearId): void
+{
+    mt_srand(20260921);   // the date on the school's official timetable
+
+    $busy = [];           // teacher id => day => [[start, end], …]
+    foreach (ScheduleEntry::teacherTimes($yearId) as $row) {
+        $busy[(int) $row['teacher_id']][(int) $row['day']][] = [$row['starts_at'], $row['ends_at']];
+    }
+    $free = static function (?int $teacher, int $day, array $period) use (&$busy): bool {
+        foreach ($teacher === null ? [] : ($busy[$teacher][$day] ?? []) as [$start, $end]) {
+            if ($start < $period['ends_at'] && $period['starts_at'] < $end) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    $subjectsByClass = [];
+    foreach (ClassSubject::forYear($yearId) as $row) {
+        $subjectsByClass[(int) $row['class_id']][] = $row;
+    }
+
+    foreach (SchoolClass::overview($yearId) as $class) {
+        $classId = (int) $class['id'];
+        if ((int) $class['lessons'] > 0) {
+            continue;   // already has a timetable (demo or entered by the admin)
+        }
+
+        $periods = LessonPeriod::forShift((int) $class['shift']);
+        $lessons = [];
+        foreach ($subjectsByClass[$classId] ?? [] as $row) {
+            for ($i = 0; $i < (int) $row['hours']; $i++) {
+                $lessons[] = ['cs' => (int) $row['id'], 'teacher' => $row['teacher_id'] !== null ? (int) $row['teacher_id'] : null];
+            }
+        }
+
+        for ($attempt = 1; $attempt <= 300; $attempt++) {
+            $grid = [];
+            $perDay = [];
+            $remaining = $lessons;
+            while ($remaining !== []) {
+                // For each lesson still to place: the slots it could go into
+                $best = null;
+                foreach ($remaining as $index => $lesson) {
+                    $options = [];
+                    foreach (Labels::SCHOOL_DAYS as $day) {
+                        if (($perDay[$day][$lesson['cs']] ?? 0) >= 2) {
+                            continue;
+                        }
+                        foreach ($periods as $number => $period) {
+                            if (!isset($grid[$day][$number]) && $free($lesson['teacher'], $day, $period)) {
+                                $options[] = [$day, $number];
+                            }
+                        }
+                    }
+                    if ($best === null || count($options) < count($best[1]) || (count($options) === count($best[1]) && mt_rand(0, 1) === 1)) {
+                        $best = [$index, $options];
+                    }
+                }
+                if ($best[1] === []) {
+                    continue 2;   // dead end: start this class again
+                }
+                [$day, $number] = $best[1][mt_rand(0, count($best[1]) - 1)];
+                $lesson = $remaining[$best[0]];
+                $grid[$day][$number] = $lesson;
+                $perDay[$day][$lesson['cs']] = ($perDay[$day][$lesson['cs']] ?? 0) + 1;
+                unset($remaining[$best[0]]);
+            }
+
+            foreach ($grid as $day => $row) {
+                foreach ($row as $number => $lesson) {
+                    ScheduleEntry::create($classId, $day, $number, $lesson['cs'], null, null);
+                    if ($lesson['teacher'] !== null) {
+                        $busy[$lesson['teacher']][$day][] = [$periods[$number]['starts_at'], $periods[$number]['ends_at']];
+                    }
+                }
+            }
+            continue 2;   // next class
+        }
+
+        fwrite(STDERR, 'Kujdes: orari i klasës ' . Format::classLabel((int) $class['grade_level'], (int) $class['section']) . " nuk u plotësua.\n");
+    }
 }
 
 $data = require __DIR__ . '/school-data.php';
@@ -155,7 +249,10 @@ Database::transaction(static function () use ($data, $yearId, $teacher, $subject
         $load[$candidates[0]] += (int) $row['hours'];
     }
 
-    // 5. Student accounts, enrolled in their class
+    // 5. A demo timetable for every class that has none yet
+    buildTimetables($yearId);
+
+    // 6. Student accounts, enrolled in their class
     foreach ($data['students'] as [$first, $last, $grade, $section, $born, $gender]) {
         $existing = User::findByName('student', $first, $last);
         if ($existing === null) {
@@ -186,7 +283,8 @@ $noCredentials = count(array_filter($teachers, static fn (array $t): bool => (in
 echo "Viti shkollor {$year['name']}\n";
 echo '  Klasa:         ' . count($overview) . ' (me kujdestar: ' . SchoolClass::countWithHomeroom($yearId) . ")\n";
 echo '  Mësimdhënës:   ' . count($teachers) . " (pa fletë hyrjeje: {$noCredentials})\n";
-echo "  Lëndë në klasa: {$subjectsTotal} (me mësimdhënës: {$subjectsAssigned})\n\n";
+echo "  Lëndë në klasa: {$subjectsTotal} (me mësimdhënës: {$subjectsAssigned})\n";
+echo '  Orari:         ' . array_sum(array_column($overview, 'lessons')) . ' orë në javë (përplasje: ' . count(ScheduleEntry::clashes($yearId)) . ")\n\n";
 
 foreach ($overview as $class) {
     if ((int) $class['grade_level'] >= 11) {
