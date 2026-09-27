@@ -153,6 +153,16 @@ SELECT plan.grade_level, s.id, plan.weekly_hours
   JOIN subjects s ON s.name = plan.name COLLATE utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------
+-- Daily duty posts, as on the official timetable: the hall (one teacher)
+-- and each of the three floors (two teachers each).
+-- ---------------------------------------------------------------------
+INSERT INTO duty_posts (name, places, sort_order) VALUES
+  ('Salla',       1, 1),
+  ('Kati i parë', 2, 2),
+  ('Kati i dytë', 2, 3),
+  ('Kati i tretë', 2, 4);
+
+-- ---------------------------------------------------------------------
 -- Public news categories
 -- ---------------------------------------------------------------------
 INSERT INTO post_categories (name, slug, sort_order) VALUES

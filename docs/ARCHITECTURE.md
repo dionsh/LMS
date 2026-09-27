@@ -215,7 +215,7 @@ Each session has a token (`random_bytes(32)`). Every form carries it as a hidden
 
 ## 7. Database design
 
-33 tables, verified by importing into MariaDB and running 21 negative tests (§7.4, `tests/database_test.sh`).
+35 tables, verified by importing into MariaDB and running 26 negative tests (§7.4, `tests/database_test.sh`).
 
 ### 7.1 Core relationships
 
@@ -258,6 +258,7 @@ erDiagram
 | People | `users`, `student_profiles`, `teacher_profiles` |
 | Calendar | `academic_years`, `terms` |
 | Structure | `grade_levels`, `subjects`, `grade_subjects` (curriculum), `teacher_subjects`, `rooms`, `lesson_periods`, `classes`, `enrollments`, `class_subjects`, `schedule_entries` |
+| Daily duty | `duty_posts`, `duty_assignments` |
 | Coursework | `grade_types`, `assignments`, `assignment_files`, `submissions`, `submission_files`, `assessments`, `grades`, `term_grades` |
 | Communication | `post_categories`, `posts`, `announcements`, `notifications` |
 | Public content | `contact_messages`, `faqs`, `useful_links` |
@@ -284,6 +285,9 @@ erDiagram
 13. **Weekly hours are inherited.** `class_subjects.weekly_hours` is NULL when the class follows the curriculum. A number there is a class-specific exception. Changing the curriculum therefore updates every class that follows it.
 14. **Teachers' subjects, numbers and norm.** `teacher_subjects` records what each teacher teaches. Those teachers are offered first when a subject is assigned in a class, but the list does not restrict the choice. `teacher_profiles.timetable_number` is the teacher's number on the school's printed timetable, where cells show "25" instead of a name. It is unique, and optional. `teacher_profiles.weekly_norm` is the lessons a week a teacher is employed for: 20 for a full norm. The admin sees each teacher's load against it, and a teacher above it is flagged, not refused.
 15. **One class per room and shift.** A class's own room (`classes.home_room_id`) can be shared by a morning and an afternoon class, never by two classes in the same shift (checked when saving a class).
+16. **Daily duty is its own small model.** `duty_posts` are the places teachers keep watch (the hall, each floor) with how many teachers each needs. `duty_assignments` puts one teacher in one place per year, shift and day.
+    - The database refuses two teachers in one place and a teacher twice on the same day in the same shift. The same teacher may keep watch in the other shift.
+    - A post that still has teachers cannot be deleted. Making a post smaller takes the teachers in the removed places off.
 
 ### 7.4 Verified behaviour
 
@@ -306,6 +310,8 @@ Each of these statements is run against a throwaway copy of the schema by `tests
 - a class in a grade the school does not have; deleting a grade that still has classes
 - curriculum or class hours outside 1–12; a curriculum row for a grade that does not exist
 - two teachers with the same timetable number
+- a class-subject with 13 lessons a week; a teaching norm of 0
+- two teachers in the same duty place; a teacher on duty twice on the same day and shift; deleting a duty post still in use; a duty post with no places
 
 Removing a teacher correctly un-assigned them and kept all marks. A subject that is only in the curriculum can be deleted (its curriculum rows go with it).
 
@@ -383,6 +389,14 @@ Removing a teacher correctly un-assigned them and kept all marks. A subject that
 - **Clashes** are judged by clock time, not period number. A teacher or a room can be in one place at a time. One lesson per class and slot is enforced by the database.
 - Planned-vs-scheduled weekly hours on the editor, the class list and the sheet.
 - When a class's timetable changes, its students get a notification (once, until they have read it).
+
+**Daily duty** (*Kujdestaria e ditës*, built in T08b). In each shift, teachers keep watch in the hall and on each floor, a different group each day, as printed at the bottom of the school's timetable.
+- The admin fills the roster per shift (`/admin/kujdestaria`): day × post × place.
+  - Teachers who have lessons that day in that shift are listed first.
+  - A teacher can be in one place per day and shift; the reason is named in the cell when saving is refused.
+- The posts and how many teachers each needs are edited on the same page.
+- The roster appears under the whole-school sheet and prints with it.
+- Teachers see their duty days on *Orari*, and "Sot keni kujdestarinë e ditës: Kati i parë." on the dashboard that day.
 
 **Shifts.** Each class belongs to one shift, and lesson times come from that shift's bell schedule. If classes switch shifts during the year (e.g. per semester), the admin only changes the class's shift: the timetable keeps its periods and the times follow automatically.
 
@@ -516,6 +530,7 @@ URLs are Albanian (without diacritics); code identifiers are English.
 | `/admin/orari/klasa/{id}` | one class's week: the timetable builder |
 | `/admin/orari/oret` (POST `/{shift}`) | bell schedule of both shifts |
 | `/admin/orari/mesimdhenesi/{id}` | one teacher's week, as the teacher sees it |
+| `/admin/kujdestaria?ndrrimi=1\|2` (POST `/{shift}`; `/vendet/shto`, `/vendet/{id}`, `/vendet/{id}/fshij`) | daily duty roster per shift; duty posts |
 | `/admin/detyrat` · `/admin/notat` | oversight of assignments · marks |
 | `/admin/lajmet` · `/admin/kategorite` | posts · categories |
 | `/admin/njoftimet` · `/admin/mesazhet` | announcements · contact inbox |
@@ -760,7 +775,6 @@ Greeting by hour: Mirëmëngjes (< 12:00) · Mirëdita (< 18:00) · Mirëmbrëma
    | Astronomi | — | — | 2 |
 
    Filozofi and Psikologji are two subjects. The timetable confirms it: XI classes have 13 subjects.
-10. **Teachers** (staff list 2026–2027). The school has 72 teachers, numbered 1–73; number 52 is empty, and 74–76 are marked "mz". The number is the one in the timetable's cells. A full teaching norm is **20 lessons a week**; part-time teachers have fewer (`teacher_profiles.weekly_norm`).
 9. **The official morning timetable** (*Orari i mësimit, Paradite, 2026/2027*, dated 21.09.2026; the photo is kept off the repository, its content is in `database/demo/`) confirms how lessons work:
    - every class has six lessons a day, Monday to Friday;
    - the printed seventh column is empty;
@@ -768,6 +782,8 @@ Greeting by hour: Mirëmëngjes (< 12:00) · Mirëdita (< 18:00) · Mirëmbrëma
    - each class keeps its room.
 
    The sheet gives no clock times, so the bell schedule of decision 4 stands.
+10. **Teachers** (staff list 2026–2027). The school has 72 teachers, numbered 1–73; number 52 is empty, and 74–76 are marked "mz". The number is the one in the timetable's cells. A full teaching norm is **20 lessons a week**; part-time teachers have fewer (`teacher_profiles.weekly_norm`).
+11. **Daily duty** (*Kujdestaria e ditës*), from the bottom of the morning timetable. Each school day one teacher keeps watch in the hall (*Salla*) and two on each of the three floors. Some places are empty on the sheet. Every teacher on the morning roster teaches that morning.
 
 ### Design defaults (change any time)
 

@@ -148,6 +148,20 @@ Legend: ✅ done · 🟡 partly done · 🔜 next · ⬜ planned
     - planned-vs-scheduled hours
     - students notified when their class's timetable changes (the bell list itself comes in T14)
     - demo timetable for all 37 classes (seeded, the same on every run)
+- ✅ **T08b · Daily duty (Kujdestaria e ditës)** — **done 27 Sep 2026**: `tests/duty_test.sh` passes 43/43, `tests/database_test.sh` 26/26.
+  - Verified:
+    - the morning roster from the official timetable is loaded: the hall and three floors, 31 places filled, Monday 27 · 36, 70 · 63, 42 · 29, 47;
+    - every teacher on the morning roster teaches that morning;
+    - the same teacher twice on one day, or a student, is refused (422, nothing saved); saving an unchanged roster changes nothing;
+    - the afternoon roster is kept apart from the morning's;
+    - posts can be added (1–6 places), renamed and shrunk (teachers in removed places are taken off); a post in use cannot be removed;
+    - the admin area only, CSRF on every change, and every change is in the activity log.
+  - Deliverables:
+    - **duty posts** (*vendet*): Salla, Kati i parë, Kati i dytë, Kati i tretë, each with a number of places, editable
+    - **the roster per shift** (`/admin/kujdestaria`): day × post × place, a teacher in each; teachers who have lessons that day in that shift are listed first
+    - the roster under the whole-school sheet, as on the printed timetable (it prints with it)
+    - the teacher sees their duty days on *Orari*, and "Sot keni kujdestarinë e ditës" on the dashboard that day
+    - the database refuses two teachers in one place and one teacher twice a day in a shift
 
 ## Phase 3 — LMS core
 

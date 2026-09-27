@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Duty;
 use App\Models\LessonPeriod;
 use App\Models\ScheduleEntry;
 use App\Support\Labels;
@@ -82,6 +83,7 @@ final class TimetableView
             'current'   => $current,
             'today'     => $today,
             'state'     => Timetable::nowNext($today, $now),
+            'duty'      => Duty::forTeacher($teacherId, $academicYearId),
         ];
     }
 }

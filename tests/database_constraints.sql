@@ -16,6 +16,7 @@ INSERT INTO submissions (assignment_id, student_id, body, submitted_at) VALUES (
 INSERT INTO grades (student_id, class_subject_id, term_id, grade_type_id, assignment_id, grade, graded_on) VALUES (3,1,1,1,1,5,'2026-10-03');
 INSERT INTO teacher_profiles (user_id, title, timetable_number) VALUES (1,'Prof.',25),(2,'Prof.',NULL);
 INSERT INTO teacher_subjects (teacher_id, subject_id) VALUES (1,4),(2,1);
+INSERT INTO duty_assignments (academic_year_id, shift, day_of_week, duty_post_id, place, teacher_id) VALUES (1,1,1,(SELECT id FROM duty_posts WHERE sort_order = 1),1,1);
 SELECT 'fixture inserted OK' AS result;
 
 SELECT '--- each statement below MUST fail ---' AS result;
@@ -63,6 +64,14 @@ UPDATE teacher_profiles SET timetable_number = 25 WHERE user_id = 2;
 UPDATE class_subjects SET weekly_hours = 13 WHERE id = 1;
 -- 22. a teaching norm of 0 lessons a week
 UPDATE teacher_profiles SET weekly_norm = 0 WHERE user_id = 1;
+-- 23. a second teacher in the same duty place
+INSERT INTO duty_assignments (academic_year_id, shift, day_of_week, duty_post_id, place, teacher_id) VALUES (1,1,1,(SELECT id FROM duty_posts WHERE sort_order = 1),1,2);
+-- 24. the same teacher on duty twice on the same day and shift
+INSERT INTO duty_assignments (academic_year_id, shift, day_of_week, duty_post_id, place, teacher_id) VALUES (1,1,1,(SELECT id FROM duty_posts WHERE sort_order = 2),1,1);
+-- 25. deleting a duty post that still has teachers on it
+DELETE FROM duty_posts WHERE sort_order = 1;
+-- 26. a duty post with no places
+INSERT INTO duty_posts (name, places, sort_order) VALUES ('Oborri',0,5);
 
 SELECT '--- these MUST succeed ---' AS result;
 -- several students without an e-mail address
@@ -84,3 +93,6 @@ SELECT COUNT(*) AS teacher_subjects_left_for_removed_teacher FROM teacher_subjec
 SELECT id, class_id, teacher_id FROM class_subjects WHERE id IN (2,3);
 SELECT id, homeroom_teacher_id FROM classes WHERE id = 2;
 SELECT COUNT(*) AS grades_for_arta FROM grades WHERE student_id = 3;
+-- the same teacher can keep duty in the other shift on the same day
+INSERT INTO duty_assignments (academic_year_id, shift, day_of_week, duty_post_id, place, teacher_id) VALUES (1,2,1,(SELECT id FROM duty_posts WHERE sort_order = 1),1,1);
+SELECT COUNT(*) AS duty_days_for_arben FROM duty_assignments WHERE teacher_id = 1;

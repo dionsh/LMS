@@ -323,6 +323,45 @@ CREATE TABLE schedule_entries (
   CONSTRAINT chk_schedule_period CHECK (period_number BETWEEN 1 AND 12)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Daily duty (kujdestaria e ditës): in each shift, teachers keep watch in
+-- the hall and on each floor. The posts are the school's own places;
+-- `places` is how many teachers keep each one on a day.
+CREATE TABLE duty_posts (
+  id         INT UNSIGNED      NOT NULL AUTO_INCREMENT,
+  name       VARCHAR(60)       NOT NULL,                -- "Salla", "Kati i parë"
+  places     TINYINT UNSIGNED  NOT NULL DEFAULT 1,
+  sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_duty_posts_name (name),
+  CONSTRAINT chk_duty_posts_places CHECK (places BETWEEN 1 AND 6)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Who is on duty where, per year, shift and school day. A teacher keeps
+-- at most one post on a day in a shift.
+CREATE TABLE duty_assignments (
+  id               INT UNSIGNED     NOT NULL AUTO_INCREMENT,
+  academic_year_id INT UNSIGNED     NOT NULL,
+  shift            TINYINT UNSIGNED NOT NULL,
+  day_of_week      TINYINT UNSIGNED NOT NULL,           -- ISO-8601: 1 = e hënë
+  duty_post_id     INT UNSIGNED     NOT NULL,
+  place            TINYINT UNSIGNED NOT NULL,           -- 1 … duty_posts.places
+  teacher_id       INT UNSIGNED     NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_duty_assignments_slot (academic_year_id, shift, day_of_week, duty_post_id, place),
+  UNIQUE KEY uq_duty_assignments_teacher_day (academic_year_id, shift, day_of_week, teacher_id),
+  KEY idx_duty_assignments_post (duty_post_id),
+  KEY idx_duty_assignments_teacher (teacher_id),
+  CONSTRAINT fk_duty_assignments_year FOREIGN KEY (academic_year_id)
+    REFERENCES academic_years (id) ON DELETE CASCADE,
+  CONSTRAINT fk_duty_assignments_post FOREIGN KEY (duty_post_id)
+    REFERENCES duty_posts (id) ON DELETE RESTRICT,
+  CONSTRAINT fk_duty_assignments_teacher FOREIGN KEY (teacher_id)
+    REFERENCES users (id) ON DELETE CASCADE,
+  CONSTRAINT chk_duty_assignments_shift CHECK (shift IN (1, 2)),
+  CONSTRAINT chk_duty_assignments_day   CHECK (day_of_week BETWEEN 1 AND 7),
+  CONSTRAINT chk_duty_assignments_place CHECK (place BETWEEN 1 AND 6)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ---------------------------------------------------------------------
 -- 5. Coursework: assignments, submissions, assessments, grades
 -- ---------------------------------------------------------------------

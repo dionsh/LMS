@@ -22,6 +22,16 @@ use App\Support\Format;
     <?php endif; ?>
 </header>
 
+<?php $dutyToday = array_values(array_filter($view['duty'], static fn (array $d): bool => $view['schoolDay'] && (int) $d['day'] === $view['day'])); ?>
+<?php if ($dutyToday !== []): ?>
+    <div class="callout" role="status">
+        <div>
+            <strong>Sot keni kujdestarinë e ditës: <?= e($dutyToday[0]['post']) ?>.</strong>
+            <p class="meta">Ndërrimi i <?= e((int) $dutyToday[0]['shift'] === 1 ? 'paradites' : 'pasdites') ?>.</p>
+        </div>
+    </div>
+<?php endif; ?>
+
 <?php if ($view['lessons'] > 0): ?>
     <div class="dashboard">
         <div class="span-7">

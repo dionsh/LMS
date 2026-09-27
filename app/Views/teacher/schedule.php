@@ -23,6 +23,13 @@ $shifts = array_map(static fn (int $shift): string => Labels::shift($shift, true
     <?php endif; ?>
 </header>
 
+<?php if ($view['duty'] !== []): ?>
+    <section class="card admin-note no-print" aria-labelledby="duty-title">
+        <h2 class="card__title" id="duty-title">Kujdestaria e ditës</h2>
+        <?= partial('partials/teacher-duty', ['duty' => $view['duty'], 'today' => $view['schoolDay'] ? $view['day'] : null]) ?>
+    </section>
+<?php endif; ?>
+
 <?php if ($view['lessons'] === 0): ?>
     <div class="empty">
         <div class="empty__mark motif" aria-hidden="true"></div>

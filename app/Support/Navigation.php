@@ -65,6 +65,7 @@ final class Navigation
                 self::section('Shkolla', [
                     self::item('classes', 'Klasat', '/admin/klasat', 'layers'),
                     self::item('schedule', 'Orari', '/admin/orari', 'calendar'),
+                    self::item('duty', 'Kujdestaria e ditës', '/admin/kujdestaria', 'shield'),
                     self::item('curriculum', 'Plani mësimor', '/admin/plani-mesimor', 'grid'),
                     self::item('subjects', 'Lëndët', '/admin/lendet', 'book'),
                     self::item('rooms', 'Sallat', '/admin/sallat', 'door'),

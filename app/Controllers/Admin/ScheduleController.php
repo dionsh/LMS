@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Models\AcademicYear;
 use App\Models\ClassSubject;
+use App\Models\Duty;
 use App\Models\LessonPeriod;
 use App\Models\Room;
 use App\Models\ScheduleEntry;
@@ -71,6 +72,8 @@ final class ScheduleController extends AdminController
             'clashes'     => ScheduleEntry::clashes($yearId),
             'outside'     => ScheduleEntry::outsideBellSchedule($yearId),
             'lastChanged' => ScheduleEntry::lastChanged($yearId, $shift),
+            'dutyPosts'   => Duty::posts(),
+            'duty'        => Duty::forShift($yearId, $shift),
         ], 'schedule');
     }
 

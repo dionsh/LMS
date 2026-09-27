@@ -55,4 +55,5 @@
   <symbol id="map-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
   <symbol id="grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M3.5 9h17M3.5 14.5h17M9.5 9v11.5M15 9v11.5"/></symbol>
   <symbol id="print" viewBox="0 0 24 24"><path d="M7 8.5v-5h10v5"/><path d="M7 16.5H5.5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H17"/><path d="M7 13.5h10v7H7z"/></symbol>
+  <symbol id="shield" viewBox="0 0 24 24"><path d="M12 3.5 5 6.2v5.3c0 4.3 3 7.8 7 9 4-1.2 7-4.7 7-9V6.2z"/><path d="m9 12 2.2 2.2L15.5 10"/></symbol>
 </svg>

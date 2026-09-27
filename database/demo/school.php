@@ -13,6 +13,7 @@ declare(strict_types=1);
  *     teacher is not known yet, at most 20 lessons a week each, and for the
  *     afternoon classes' homerooms;
  *   - a demo timetable for every class that has none;
+ *   - the morning's daily duty (duty-morning.php, from the official timetable);
  *   - 10 student accounts enrolled in X-13, XI-5 and XII-1.
  *
  *   php database/demo/school.php
@@ -24,6 +25,7 @@ declare(strict_types=1);
 use App\Core\Database;
 use App\Models\AcademicYear;
 use App\Models\ClassSubject;
+use App\Models\Duty;
 use App\Models\Enrollment;
 use App\Models\GradeLevel;
 use App\Models\LessonPeriod;
@@ -143,6 +145,7 @@ function buildTimetables(int $yearId): void
 
 $data = require __DIR__ . '/school-data.php';
 $staff = require __DIR__ . '/staff.php';
+$duty = require __DIR__ . '/duty-morning.php';
 $year = AcademicYear::current() ?? exit("Mungon viti shkollor aktual (seed.sql).\n");
 $yearId = (int) $year['id'];
 $subjectIds = array_column(Subject::options(), 'id', 'name');
@@ -172,7 +175,7 @@ $teacher = static function (string $first, string $last, bool $real, ?int $numbe
     return $id;
 };
 
-Database::transaction(static function () use ($data, $staff, $yearId, $teacher, $subjectIds): void {
+Database::transaction(static function () use ($data, $staff, $duty, $yearId, $teacher, $subjectIds): void {
     // 1. Classes in their shift, each with its grade's subjects
     $classes = [];
     foreach ($data['classes'] as [$grade, $from, $to, $shift]) {
@@ -266,7 +269,26 @@ Database::transaction(static function () use ($data, $staff, $yearId, $teacher, 
     // 6. A demo timetable for every class that has none yet
     buildTimetables($yearId);
 
-    // 7. Student accounts, enrolled in their class
+    // 7. The morning's daily duty, as on the official timetable (unless already set)
+    if (!Duty::hasShift($yearId, 1)) {
+        $postIds = array_column(Duty::posts(), 'id', 'name');
+        $cells = [];
+        foreach ($duty as $day => $posts) {
+            foreach ($posts as $post => $numbers) {
+                if (!isset($postIds[$post])) {
+                    fwrite(STDERR, "Kujdes: vendi i kujdestarisë \"{$post}\" nuk ekziston; u anashkalua.
+");
+                    continue;
+                }
+                foreach (array_values($numbers) as $index => $number) {
+                    $cells[$day][(int) $postIds[$post]][$index + 1] = $byNumber[$number];
+                }
+            }
+        }
+        Duty::replaceShift($yearId, 1, $cells);
+    }
+
+    // 8. Student accounts, enrolled in their class
     foreach ($data['students'] as [$first, $last, $grade, $section, $born, $gender]) {
         $existing = User::findByName('student', $first, $last);
         if ($existing === null) {

@@ -71,7 +71,8 @@
 .sheet .is-day-start { border-left: 2px solid var(--ink-3); }
 
 .sheet .sheet__corner,
-.sheet .sheet__class {
+.sheet .sheet__class,
+.sheet .sheet__row-head {
     position: sticky;
     left: 0;
     z-index: 1;
@@ -177,6 +178,32 @@
 }
 
 .class-chip:hover { border-color: var(--brand-strong); }
+
+/* ================================================================ daily duty (kujdestaria e ditës) */
+
+.duty-table th[scope="rowgroup"] { vertical-align: middle; }
+.duty-table .duty-table__post > * { border-top: 2px solid var(--line); }
+.duty-table tbody tr:first-child > * { border-top: 0; }
+
+.duty-post { flex: 1 1 auto; }
+.duty-post .field:first-child { flex: 1 1 16rem; }
+.duty-post--new {
+    margin-top: var(--space-5);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--line);
+}
+
+.duty-sheet-wrap { margin-top: var(--space-6); }
+.duty-sheet td.duty-sheet__cell { min-width: 9rem; text-align: left; }
+.duty-sheet-link { margin-top: var(--space-3); }
+
+.duty-days {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.duty-days li + li { margin-top: var(--space-1); }
 
 /* ================================================================ student & teacher timetable pages */
 
@@ -310,7 +337,8 @@
     .sheet__grade th { background: #eee; color: #000; }
 
     .sheet .sheet__corner,
-    .sheet .sheet__class { position: static; }
+    .sheet .sheet__class,
+    .sheet .sheet__row-head { position: static; }
 
     .sheet a { color: inherit; text-decoration: none; }
     .sheet thead { display: table-header-group; }

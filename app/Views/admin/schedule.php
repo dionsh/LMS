@@ -12,6 +12,7 @@
  * @var array $cells             class id => day => period => lesson (+ 'code')
  * @var array $legend            teacher id => ['code', 'entry', 'subjects']
  * @var list<array> $clashes @var list<array> $outside @var string|null $lastChanged
+ * @var list<array> $dutyPosts @var array $duty  the shift's daily duty (Duty::forShift())
  */
 
 use App\Support\Format;
@@ -161,6 +162,13 @@ $query = static fn (array $change): array => array_merge(['ndrrimi' => $shift, '
             <?php endforeach; ?>
         </table>
     </div>
+
+    <?php if ($duty !== []): ?>
+        <?= partial('partials/duty-roster', ['posts' => $dutyPosts, 'grid' => $duty, 'shiftName' => Labels::shift($shift)]) ?>
+        <p class="meta no-print duty-sheet-link"><a href="<?= e(url('/admin/kujdestaria', ['ndrrimi' => $shift])) ?>">Ndrysho kujdestarinë e ditës</a></p>
+    <?php else: ?>
+        <p class="meta no-print duty-sheet-link">Kujdestaria e ditës e këtij ndërrimi nuk është vendosur ende. <a href="<?= e(url('/admin/kujdestaria', ['ndrrimi' => $shift])) ?>">Vendoseni</a>.</p>
+    <?php endif; ?>
 
     <?php if ($mode === 'teachers' && $legend !== []): ?>
         <section class="sheet-legend" aria-labelledby="legend-title">

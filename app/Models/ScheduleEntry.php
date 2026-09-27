@@ -104,6 +104,27 @@ final class ScheduleEntry extends Model
         );
     }
 
+    /** How many lessons each teacher has on each day of a shift: [teacher id => [day => lessons]]. */
+    public static function lessonsPerDay(int $academicYearId, int $shift): array
+    {
+        $rows = self::fetchAll(
+            'SELECT cs.teacher_id, se.day_of_week AS day, COUNT(*) AS lessons
+               FROM schedule_entries se
+               JOIN classes c ON c.id = se.class_id
+               JOIN class_subjects cs ON cs.id = se.class_subject_id
+              WHERE c.academic_year_id = ? AND c.shift = ? AND cs.teacher_id IS NOT NULL
+              GROUP BY cs.teacher_id, se.day_of_week',
+            [$academicYearId, $shift]
+        );
+
+        $lessons = [];
+        foreach ($rows as $row) {
+            $lessons[(int) $row['teacher_id']][(int) $row['day']] = (int) $row['lessons'];
+        }
+
+        return $lessons;
+    }
+
     /** When each teacher is busy in a year: [teacher_id, class_id, day, starts_at, ends_at] per lesson. */
     public static function teacherTimes(int $academicYearId): array
     {

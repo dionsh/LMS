@@ -17,6 +17,7 @@ use App\Controllers\Account\ProfileController;
 use App\Controllers\Admin\BellScheduleController as AdminBells;
 use App\Controllers\Admin\ClassController as AdminClasses;
 use App\Controllers\Admin\DashboardController as AdminDashboard;
+use App\Controllers\Admin\DutyController as AdminDuty;
 use App\Controllers\Admin\GradeController as AdminGrades;
 use App\Controllers\Admin\RoomController as AdminRooms;
 use App\Controllers\Admin\ScheduleController as AdminSchedule;
@@ -110,6 +111,13 @@ $router->group(['prefix' => '/admin', 'middleware' => ['auth', 'password.changed
     $r->get('/orari/mesimdhenesi/{id:\d+}', [AdminSchedule::class, 'teacher'], 'admin.schedule.teacher');
     $r->get('/orari/oret', [AdminBells::class, 'edit'], 'admin.bells');
     $r->post('/orari/oret/{shift:\d+}', [AdminBells::class, 'update'], 'admin.bells.update');
+
+    // Daily duty (kujdestaria e ditës): who keeps watch in the hall and on each floor
+    $r->get('/kujdestaria', [AdminDuty::class, 'index'], 'admin.duty');
+    $r->post('/kujdestaria/vendet/shto', [AdminDuty::class, 'storePost'], 'admin.duty.posts.store');
+    $r->post('/kujdestaria/vendet/{id:\d+}', [AdminDuty::class, 'updatePost'], 'admin.duty.posts.update');
+    $r->post('/kujdestaria/vendet/{id:\d+}/fshij', [AdminDuty::class, 'destroyPost'], 'admin.duty.posts.destroy');
+    $r->post('/kujdestaria/{shift:\d+}', [AdminDuty::class, 'update'], 'admin.duty.update');
 
     // Curriculum: grades and the subjects they study
     $r->get('/plani-mesimor', [AdminGrades::class, 'index'], 'admin.grades');
