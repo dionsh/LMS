@@ -79,7 +79,7 @@ lms-system/
 ├── database/
 │   ├── schema.sql             # tables (this plan)
 │   ├── seed.sql               # reference data
-│   ├── demo/                  # demo school for testing (later task)
+│   ├── demo/                  # the school's real data (staff, timetable, duty) and demo data for testing
 │   └── migrations/            # numbered changes after launch
 ├── storage/                   # PRIVATE, never web-reachable
 │   ├── uploads/assignments/   # teacher materials
@@ -215,7 +215,7 @@ Each session has a token (`random_bytes(32)`). Every form carries it as a hidden
 
 ## 7. Database design
 
-35 tables, verified by importing into MariaDB and running 26 negative tests (§7.4, `tests/database_test.sh`).
+36 tables, verified by importing into MariaDB and running 28 negative tests (§7.4, `tests/database_test.sh`).
 
 ### 7.1 Core relationships
 
@@ -236,6 +236,7 @@ erDiagram
     subjects ||--o{ class_subjects : "taught as"
     users |o--o{ class_subjects : "teaches"
     class_subjects ||--o{ schedule_entries : "timetable"
+    classes ||--o{ schedule_sheet_cells : "timetable in numbers"
     rooms |o--o{ schedule_entries : "held in"
     class_subjects ||--o{ assignments : "homework"
     assignments ||--o{ assignment_files : "materials"
@@ -257,7 +258,7 @@ erDiagram
 | Configuration | `settings` |
 | People | `users`, `student_profiles`, `teacher_profiles` |
 | Calendar | `academic_years`, `terms` |
-| Structure | `grade_levels`, `subjects`, `grade_subjects` (curriculum), `teacher_subjects`, `rooms`, `lesson_periods`, `classes`, `enrollments`, `class_subjects`, `schedule_entries` |
+| Structure | `grade_levels`, `subjects`, `grade_subjects` (curriculum), `teacher_subjects`, `rooms`, `lesson_periods`, `classes`, `enrollments`, `class_subjects`, `schedule_entries`, `schedule_sheet_cells` (the timetable in numbers) |
 | Daily duty | `duty_posts`, `duty_assignments` |
 | Coursework | `grade_types`, `assignments`, `assignment_files`, `submissions`, `submission_files`, `assessments`, `grades`, `term_grades` |
 | Communication | `post_categories`, `posts`, `announcements`, `notifications` |
@@ -288,6 +289,10 @@ erDiagram
 16. **Daily duty is its own small model.** `duty_posts` are the places teachers keep watch (the hall, each floor) with how many teachers each needs. `duty_assignments` puts one teacher in one place per year, shift and day.
     - The database refuses two teachers in one place and a teacher twice on the same day in the same shift. The same teacher may keep watch in the other shift.
     - A post that still has teachers cannot be deleted. Making a post smaller takes the teachers in the removed places off.
+17. **The timetable in numbers is kept apart from the timetable.** The school plans its timetable on paper, with a teacher's number in each cell and no subject. `schedule_sheet_cells` keeps that sheet exactly as typed (class, day, period, number).
+    - So it can be entered and checked before the system knows who teaches what.
+    - `ScheduleSheetService` reads a number in a class as the subject of that class the teacher teaches (the subject the class has given them, else one of their own subjects, never one another teacher of the class has). A class whose numbers can all be read that way can be applied.
+    - Applying replaces the class's `schedule_entries` and sets its subjects' teachers. Students and teachers only ever see `schedule_entries`.
 
 ### 7.4 Verified behaviour
 
@@ -312,6 +317,7 @@ Each of these statements is run against a throwaway copy of the schema by `tests
 - two teachers with the same timetable number
 - a class-subject with 13 lessons a week; a teaching norm of 0
 - two teachers in the same duty place; a teacher on duty twice on the same day and shift; deleting a duty post still in use; a duty post with no places
+- two numbers in the same slot of the timetable in numbers; the number 0 there
 
 Removing a teacher correctly un-assigned them and kept all marks. A subject that is only in the curriculum can be deleted (its curriculum rows go with it).
 
@@ -397,6 +403,18 @@ Removing a teacher correctly un-assigned them and kept all marks. A subject that
 - The posts and how many teachers each needs are edited on the same page.
 - The roster appears under the whole-school sheet and prints with it.
 - Teachers see their duty days on *Orari*, and "Sot keni kujdestarinë e ditës: Kati i parë." on the dashboard that day.
+
+**The timetable in numbers** (*Orari me numra*, `/admin/orari/numrat`, built in T08c). The school's timetable is planned and printed with the teacher's number in every cell. The admin keeps it here exactly like that, per shift.
+- A grid laid out like the paper: classes down the side, days × lessons across. It is typed like a spreadsheet: arrow keys, and Enter for the class below.
+- What the numbers say:
+  - **problems** that stop a class: a number that is nobody's, a teacher in two classes at once, a clash with the other shift;
+  - **things to check**: hours that differ from the plan, a teacher with two subjects in one class, a homeroom teacher without lessons in their class, lessons above the norm;
+  - every teacher of the sheet with their lessons, classes and subjects (or "Pa lëndë", with a link to tick them);
+  - every class's state: *Gati*, *Në orar*, *Pret lëndët*, *Ka probleme*.
+- **Applying.** A number becomes a subject once the system knows what the teacher teaches (*Lëndët që jep* on their page). The one exception is a subject the admin has given that teacher in the class, which comes first.
+  - A class is ready when every number in it is a subject.
+  - Applying makes the sheet the timetable of the ready classes: their subjects get the sheet's teachers and their students are notified.
+  - A teacher with two subjects in a class gets both. The first subject takes the teacher's first lessons of the week, and this is flagged for checking in the class editor.
 
 **Shifts.** Each class belongs to one shift, and lesson times come from that shift's bell schedule. If classes switch shifts during the year (e.g. per semester), the admin only changes the class's shift: the timetable keeps its periods and the times follow automatically.
 
@@ -530,6 +548,7 @@ URLs are Albanian (without diacritics); code identifiers are English.
 | `/admin/orari/klasa/{id}` | one class's week: the timetable builder |
 | `/admin/orari/oret` (POST `/{shift}`) | bell schedule of both shifts |
 | `/admin/orari/mesimdhenesi/{id}` | one teacher's week, as the teacher sees it |
+| `/admin/orari/numrat?ndrrimi=1\|2` (POST `/{shift}`, `/{shift}/apliko`) | the timetable in numbers per shift: typed as printed, checked, applied to the classes |
 | `/admin/kujdestaria?ndrrimi=1\|2` (POST `/{shift}`; `/vendet/shto`, `/vendet/{id}`, `/vendet/{id}/fshij`) | daily duty roster per shift; duty posts |
 | `/admin/detyrat` · `/admin/notat` | oversight of assignments · marks |
 | `/admin/lajmet` · `/admin/kategorite` | posts · categories |
@@ -794,7 +813,7 @@ Greeting by hour: Mirëmëngjes (< 12:00) · Mirëdita (< 18:00) · Mirëmbrëma
 
 ### Still open
 
-- **Which subject each teacher teaches** (number → subject). The school will send it. Until then the real morning timetable is kept as teacher numbers, and demo teachers stand in for the subjects.
+- **Which subject each teacher teaches** (number → subject). The school will send it. Until then the real morning timetable is kept as teacher numbers (the timetable in numbers, §9.1), and the morning classes keep a demo timetable taught by demo teachers. Once the subjects are entered, the morning classes can be applied.
 - **The afternoon timetable** (X-1…X-15, XI-8…XI-15), with its homeroom teachers and daily duty. The school will send it.
 - **"mz" (74–76)** on the staff list: what these numbers stand for.
 - **Credential delivery.** Printed slips work without any setup. Should the school also want them e-mailed, that needs the school's SMTP account.

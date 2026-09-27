@@ -25,6 +25,9 @@ Loads the 2026/2027 structure from `school-data.php`. It is safe to run again; n
 - **The school's 72 teachers** with their timetable numbers (`staff.php`, from the staff list 2026–2027).
   - They are records **without sign-in credentials** until the admin issues login slips (T05), and are shown on the public website.
   - Which subjects they teach is not known yet: `staff.php` has an empty `subjects` list for each, to be filled from the school's list.
+- **The official morning timetable** (`timetable-morning.php`): the printed sheet, a teacher's number in every cell. It is loaded into the timetable in numbers (`/admin/orari/numrat`) while the morning has none, so changes made there are kept.
+  - It becomes a class's timetable as soon as the subjects of all the class's teachers are known. It replaces only a demo timetable; a class whose timetable has real teachers is left alone.
+  - Until then the morning classes keep the demo timetable below.
 - **The morning's daily duty** (*kujdestaria e ditës*, `duty-morning.php`): who keeps watch in the hall and on each floor, per day, by timetable number, from the bottom of the official morning timetable. It is loaded only while the morning has no roster, so changes made in the admin panel are kept.
 
 **Demo data** (development only, until the school's data arrives):

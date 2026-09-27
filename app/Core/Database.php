@@ -56,6 +56,7 @@ final class Database
 
     /**
      * Run $callback inside a transaction; commits on success, rolls back on any error.
+     * Called while a transaction is already open, it runs as part of that one.
      *
      * @template T
      * @param callable(PDO): T $callback
@@ -64,6 +65,9 @@ final class Database
     public static function transaction(callable $callback): mixed
     {
         $pdo = self::connection();
+        if ($pdo->inTransaction()) {
+            return $callback($pdo);
+        }
         $pdo->beginTransaction();
 
         try {

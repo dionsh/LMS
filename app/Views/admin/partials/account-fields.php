@@ -102,7 +102,7 @@ use App\Services\AccountForm;
         </div>
         <fieldset class="field">
             <legend class="field__label">Lëndët që jep</legend>
-            <p class="field__hint" id="subject_ids-hint">Kur i caktohet lënda një klase, këta mësimdhënës ofrohen të parët.</p>
+            <p class="field__hint" id="subject_ids-hint">Kur i caktohet lënda një klase, këta mësimdhënës ofrohen të parët. Prej tyre lexohet edhe orari me numra.</p>
             <div class="check-grid">
                 <?php foreach ($subjects as $subject): ?>
                     <label class="check">

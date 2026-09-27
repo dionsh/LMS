@@ -40,6 +40,25 @@ final class TeacherProfile extends Model
         return $id === null ? null : (int) $id;
     }
 
+    /**
+     * Every teacher with a number on the printed timetable, keyed by that number:
+     * id, name, title, status and weekly norm.
+     */
+    public static function byNumber(): array
+    {
+        $teachers = [];
+        foreach (self::fetchAll(
+            "SELECT tp.timetable_number, u.id, u.first_name, u.last_name, u.status, tp.title, tp.weekly_norm
+               FROM teacher_profiles tp
+               JOIN users u ON u.id = tp.user_id AND u.role = 'teacher'
+              WHERE tp.timetable_number IS NOT NULL"
+        ) as $row) {
+            $teachers[(int) $row['timetable_number']] = $row;
+        }
+
+        return $teachers;
+    }
+
     /** Give a teacher their timetable number, unless they already have one or another teacher has it. */
     public static function setNumberIfMissing(int $userId, int $number): void
     {

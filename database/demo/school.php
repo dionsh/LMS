@@ -12,6 +12,8 @@ declare(strict_types=1);
  *   - DEMO teachers ("Demo Matematikë 1" …) for every subject whose real
  *     teacher is not known yet, at most 20 lessons a week each, and for the
  *     afternoon classes' homerooms;
+ *   - the official morning timetable in numbers (timetable-morning.php), made
+ *     the timetable of every class whose teachers' subjects are known;
  *   - a demo timetable for every class that has none;
  *   - the morning's daily duty (duty-morning.php, from the official timetable);
  *   - 10 student accounts enrolled in X-13, XI-5 and XII-1.
@@ -30,12 +32,14 @@ use App\Models\Enrollment;
 use App\Models\GradeLevel;
 use App\Models\LessonPeriod;
 use App\Models\ScheduleEntry;
+use App\Models\ScheduleSheet;
 use App\Models\SchoolClass;
 use App\Models\StudentProfile;
 use App\Models\Subject;
 use App\Models\TeacherProfile;
 use App\Models\TeacherSubject;
 use App\Models\User;
+use App\Services\ScheduleSheetService;
 use App\Services\Usernames;
 use App\Support\Format;
 use App\Support\Labels;
@@ -146,6 +150,7 @@ function buildTimetables(int $yearId): void
 $data = require __DIR__ . '/school-data.php';
 $staff = require __DIR__ . '/staff.php';
 $duty = require __DIR__ . '/duty-morning.php';
+$morning = require __DIR__ . '/timetable-morning.php';
 $year = AcademicYear::current() ?? exit("Mungon viti shkollor aktual (seed.sql).\n");
 $yearId = (int) $year['id'];
 $subjectIds = array_column(Subject::options(), 'id', 'name');
@@ -175,7 +180,7 @@ $teacher = static function (string $first, string $last, bool $real, ?int $numbe
     return $id;
 };
 
-Database::transaction(static function () use ($data, $staff, $duty, $yearId, $teacher, $subjectIds): void {
+Database::transaction(static function () use ($data, $staff, $duty, $morning, $yearId, $teacher, $subjectIds): void {
     // 1. Classes in their shift, each with its grade's subjects
     $classes = [];
     foreach ($data['classes'] as [$grade, $from, $to, $shift]) {
@@ -266,18 +271,42 @@ Database::transaction(static function () use ($data, $staff, $duty, $yearId, $te
         }
     }
 
-    // 6. A demo timetable for every class that has none yet
+    // 6. The official morning timetable in numbers (unless already there). It becomes the
+    //    timetable of every class whose numbers can all be read as subjects, where the class
+    //    has no timetable yet or only the demo one (lessons of teachers without a number)
+    if (!ScheduleSheet::hasShift($yearId, 1)) {
+        $grades = ['X' => 10, 'XI' => 11, 'XII' => 12];
+        $cells = [];
+        foreach ($morning as $label => $days) {
+            [$grade, $section] = explode('-', $label);
+            foreach (array_values($days) as $day => $line) {
+                foreach (preg_split('/\s+/', trim($line)) as $period => $number) {
+                    $cells[$classes[$grades[$grade]][(int) $section]][$day + 1][$period + 1] = (int) $number;
+                }
+            }
+        }
+        ScheduleSheet::replaceShift($yearId, 1, $cells);
+    }
+    ScheduleSheetService::apply($yearId, 1, null, static function (int $classId): bool {
+        foreach (ScheduleEntry::forClass($classId) as $lesson) {
+            if ($lesson['timetable_number'] !== null) {
+                return false;
+            }
+        }
+        return true;
+    });
+
+    // 7. A demo timetable for every class that has none yet
     buildTimetables($yearId);
 
-    // 7. The morning's daily duty, as on the official timetable (unless already set)
+    // 8. The morning's daily duty, as on the official timetable (unless already set)
     if (!Duty::hasShift($yearId, 1)) {
         $postIds = array_column(Duty::posts(), 'id', 'name');
         $cells = [];
         foreach ($duty as $day => $posts) {
             foreach ($posts as $post => $numbers) {
                 if (!isset($postIds[$post])) {
-                    fwrite(STDERR, "Kujdes: vendi i kujdestarisë \"{$post}\" nuk ekziston; u anashkalua.
-");
+                    fwrite(STDERR, "Kujdes: vendi i kujdestarisë \"{$post}\" nuk ekziston; u anashkalua.\n");
                     continue;
                 }
                 foreach (array_values($numbers) as $index => $number) {
@@ -288,7 +317,7 @@ Database::transaction(static function () use ($data, $staff, $duty, $yearId, $te
         Duty::replaceShift($yearId, 1, $cells);
     }
 
-    // 8. Student accounts, enrolled in their class
+    // 9. Student accounts, enrolled in their class
     foreach ($data['students'] as [$first, $last, $grade, $section, $born, $gender]) {
         $existing = User::findByName('student', $first, $last);
         if ($existing === null) {
@@ -320,7 +349,12 @@ echo "Viti shkollor {$year['name']}\n";
 echo '  Klasa:         ' . count($overview) . ' (me kujdestar: ' . SchoolClass::countWithHomeroom($yearId) . ")\n";
 echo '  Mësimdhënës:   ' . count($teachers) . " (pa fletë hyrjeje: {$noCredentials})\n";
 echo "  Lëndë në klasa: {$subjectsTotal} (me mësimdhënës: {$subjectsAssigned})\n";
-echo '  Orari:         ' . array_sum(array_column($overview, 'lessons')) . ' orë në javë (përplasje: ' . count(ScheduleEntry::clashes($yearId)) . ")\n\n";
+echo '  Orari:         ' . array_sum(array_column($overview, 'lessons')) . ' orë në javë (përplasje: ' . count(ScheduleEntry::clashes($yearId)) . ")\n";
+$sheet = ScheduleSheetService::analyse($yearId, 1);
+$states = array_count_values($sheet['states']);
+echo '  Orari me numra (paradite): ' . $sheet['filled'] . ' orë, ' . count($sheet['teachers']) . ' mësimdhënës, ' . count($sheet['errors']) . ' probleme; '
+    . 'klasa në orar: ' . ($states[ScheduleSheetService::APPLIED] ?? 0) . ', gati: ' . ($states[ScheduleSheetService::READY] ?? 0)
+    . ', presin lëndët: ' . ($states[ScheduleSheetService::WAITING] ?? 0) . "\n\n";
 
 foreach ($overview as $class) {
     if ((int) $class['grade_level'] >= 11) {

@@ -162,6 +162,29 @@ Legend: ✅ done · 🟡 partly done · 🔜 next · ⬜ planned
     - the roster under the whole-school sheet, as on the printed timetable (it prints with it)
     - the teacher sees their duty days on *Orari*, and "Sot keni kujdestarinë e ditës" on the dashboard that day
     - the database refuses two teachers in one place and one teacher twice a day in a shift
+- ✅ **T08c · The timetable in numbers (Orari me numra)** — **done 27 Sep 2026**: `tests/sheet_test.sh` passes 82/82, `tests/database_test.sh` 28/28.
+  - Verified:
+    - the official morning timetable is in the system as printed:
+      - 660 numbers in the 22 morning classes (XI-1 on Monday: 29 68 35 44 44 29) and 57 teachers;
+      - every number is on the staff list, every homeroom teacher teaches their own class, and nobody is above 20 lessons.
+    - Problems are shown, with the cells marked: a number that is nobody's, or a teacher in two classes at once.
+    - A letter, 0 or 1000 in a cell is refused (422, nothing saved), and so is a form that did not arrive whole.
+    - With made-up subjects for the 12 teachers of XI-1, XI-1 and XI-3 (which have the same teachers) become ready. Applying them:
+      - gives each subject its teacher from the sheet and replaces their week (Monday, 1st lesson: Matematikë with 29), with no clash anywhere;
+      - flags a teacher with two subjects in one class (1 + 2 lessons);
+      - changes nothing the second time.
+    - A subject the admin gave a teacher in the class comes first, and classes still waiting keep their week.
+    - The loader keeps a sheet that already exists and never undoes an applied class.
+  - Deliverables:
+    - **the timetable in numbers** (`/admin/orari/numrat`, per shift): a grid laid out like the printed sheet with a number in every cell, typed like a spreadsheet (arrow keys, Enter)
+    - what the numbers say:
+      - problems: unknown numbers, a teacher in two classes at once, clashes with the other shift;
+      - things to check: hours that differ from the plan, two subjects in one class, a homeroom teacher without lessons in their class, lessons above the norm;
+      - each teacher's lessons, classes and subjects, and the state of every class.
+    - **applying** it: every class whose numbers can all be read as its subjects gets the sheet as its timetable, its subjects get the sheet's teachers, and its students are notified
+    - the official morning timetable in `database/demo/timetable-morning.php`, which the loader applies to each class once its teachers' subjects are known
+    - fixed: the timetable sheets and tables no longer make the page wider than a phone screen
+  - Waiting for the school: which subject each teacher teaches. Once that is in `database/demo/staff.php` (or ticked on each teacher's page), the morning classes become ready.
 
 ## Phase 3 — LMS core
 

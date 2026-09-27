@@ -21,6 +21,17 @@ final class TeacherSubject extends Model
         ));
     }
 
+    /** What every teacher teaches: [teacher id => [subject id => true]] */
+    public static function all(): array
+    {
+        $subjects = [];
+        foreach (self::fetchAll('SELECT teacher_id, subject_id FROM teacher_subjects') as $row) {
+            $subjects[(int) $row['teacher_id']][(int) $row['subject_id']] = true;
+        }
+
+        return $subjects;
+    }
+
     /** Replace the teacher's subjects. @param list<int> $subjectIds */
     public static function save(int $teacherId, array $subjectIds): void
     {

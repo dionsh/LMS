@@ -83,6 +83,12 @@ final class Labels
         2 => 'Pasdite',
     ];
 
+    /** The shift after "i/e/të", as in "ndërrimi i paradites". */
+    public const SHIFTS_OF = [
+        1 => 'paradites',
+        2 => 'pasdites',
+    ];
+
     /** School days shown in timetables (ISO numbers). */
     public const SCHOOL_DAYS = [1, 2, 3, 4, 5];
 

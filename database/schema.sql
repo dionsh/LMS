@@ -323,6 +323,25 @@ CREATE TABLE schedule_entries (
   CONSTRAINT chk_schedule_period CHECK (period_number BETWEEN 1 AND 12)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- The timetable as the school prints it: in each class's slot, the number of
+-- its teacher (teacher_profiles.timetable_number), kept exactly as typed. It
+-- becomes a class's timetable (schedule_entries) once every number in the
+-- class can be turned into one of the class's subjects (ScheduleSheetService).
+CREATE TABLE schedule_sheet_cells (
+  class_id       INT UNSIGNED      NOT NULL,
+  day_of_week    TINYINT UNSIGNED  NOT NULL,            -- ISO-8601: 1 = e hënë … 5 = e premte
+  period_number  TINYINT UNSIGNED  NOT NULL,            -- lesson_periods.number of the class's shift
+  teacher_number SMALLINT UNSIGNED NOT NULL,
+  saved_at       DATETIME          NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (class_id, day_of_week, period_number),
+  KEY idx_sheet_cells_number (teacher_number),
+  CONSTRAINT fk_sheet_cells_class FOREIGN KEY (class_id)
+    REFERENCES classes (id) ON DELETE CASCADE,
+  CONSTRAINT chk_sheet_cells_day    CHECK (day_of_week BETWEEN 1 AND 7),
+  CONSTRAINT chk_sheet_cells_period CHECK (period_number BETWEEN 1 AND 12),
+  CONSTRAINT chk_sheet_cells_number CHECK (teacher_number BETWEEN 1 AND 999)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Daily duty (kujdestaria e ditës): in each shift, teachers keep watch in
 -- the hall and on each floor. The posts are the school's own places;
 -- `places` is how many teachers keep each one on a day.

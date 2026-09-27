@@ -640,7 +640,10 @@ a.item__title:hover { color: var(--brand-strong); }
 
 /* ================================================================ tables */
 
+/* Scrolling wrappers are positioned, so absolutely positioned content (e.g. .visually-hidden)
+   scrolls with them instead of widening the page */
 .table-wrap {
+    position: relative;
     overflow-x: auto;
     border: 1px solid var(--line);
     border-radius: var(--radius-lg);
@@ -1024,6 +1027,7 @@ a.item__title:hover { color: var(--brand-strong); }
 
 /* The week as a grid (desktop) */
 .timetable-wrap {
+    position: relative;   /* see .table-wrap */
     overflow-x: auto;
     border: 1px solid var(--line);
     border-radius: var(--radius-lg);

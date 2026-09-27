@@ -66,7 +66,7 @@ final class ScheduleEntry extends Model
     public static function forShift(int $academicYearId, int $shift): array
     {
         return self::fetchAll(
-            'SELECT se.class_id, se.day_of_week AS day, se.period_number AS period,
+            'SELECT se.class_id, se.day_of_week AS day, se.period_number AS period, se.class_subject_id, se.room_id,
                     s.name AS subject_name, s.short_name,
                     u.id AS teacher_id, u.first_name AS teacher_first_name, u.last_name AS teacher_last_name,
                     tp.title AS teacher_title, tp.timetable_number, r.name AS room_name
@@ -145,7 +145,7 @@ final class ScheduleEntry extends Model
      *
      * @param array<int, array<int, array{class_subject_id: int, room_id: ?int}>> $cells day => period => lesson
      */
-    public static function replaceForClass(int $classId, array $cells, int $updatedBy): void
+    public static function replaceForClass(int $classId, array $cells, ?int $updatedBy): void
     {
         self::execute('DELETE FROM schedule_entries WHERE class_id = ?', [$classId]);
 

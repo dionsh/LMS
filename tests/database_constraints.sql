@@ -17,6 +17,7 @@ INSERT INTO grades (student_id, class_subject_id, term_id, grade_type_id, assign
 INSERT INTO teacher_profiles (user_id, title, timetable_number) VALUES (1,'Prof.',25),(2,'Prof.',NULL);
 INSERT INTO teacher_subjects (teacher_id, subject_id) VALUES (1,4),(2,1);
 INSERT INTO duty_assignments (academic_year_id, shift, day_of_week, duty_post_id, place, teacher_id) VALUES (1,1,1,(SELECT id FROM duty_posts WHERE sort_order = 1),1,1);
+INSERT INTO schedule_sheet_cells (class_id, day_of_week, period_number, teacher_number) VALUES (1,1,1,25);
 SELECT 'fixture inserted OK' AS result;
 
 SELECT '--- each statement below MUST fail ---' AS result;
@@ -72,6 +73,10 @@ INSERT INTO duty_assignments (academic_year_id, shift, day_of_week, duty_post_id
 DELETE FROM duty_posts WHERE sort_order = 1;
 -- 26. a duty post with no places
 INSERT INTO duty_posts (name, places, sort_order) VALUES ('Oborri',0,5);
+-- 27. the timetable in numbers: two numbers in one slot of a class
+INSERT INTO schedule_sheet_cells (class_id, day_of_week, period_number, teacher_number) VALUES (1,1,1,26);
+-- 28. the timetable in numbers: the number 0
+INSERT INTO schedule_sheet_cells (class_id, day_of_week, period_number, teacher_number) VALUES (1,1,2,0);
 
 SELECT '--- these MUST succeed ---' AS result;
 -- several students without an e-mail address

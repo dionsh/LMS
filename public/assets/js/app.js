@@ -257,6 +257,46 @@
     }
 
     /* ------------------------------------------------------------------
+     * A grid of inputs typed like the printed timetable:
+     *   <table data-sheet-grid> … <td><input></td> …
+     * Up/Down (and Enter) go to the same period of the class above/below;
+     * Left/Right at the edge of a number go to the cell beside it.
+     * ------------------------------------------------------------------ */
+    function initSheetGrids() {
+        document.querySelectorAll('[data-sheet-grid]').forEach(function (table) {
+            table.addEventListener('keydown', function (event) {
+                const input = event.target.closest('input');
+                if (!input || event.altKey || event.ctrlKey || event.metaKey) return;
+
+                const cell = input.closest('td');
+                const row = cell.parentElement;
+                let target = null;
+
+                if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === 'Enter') {
+                    const rows = Array.prototype.filter.call(table.querySelectorAll('tbody tr'), function (tr) {
+                        return tr.querySelector('input') !== null;
+                    });
+                    const step = event.key === 'ArrowUp' || (event.key === 'Enter' && event.shiftKey) ? -1 : 1;
+                    const next = rows[rows.indexOf(row) + step];
+                    const column = Array.prototype.indexOf.call(row.children, cell);
+                    target = next && next.children[column] ? next.children[column].querySelector('input') : null;
+                    event.preventDefault();   // Enter never submits the whole sheet by accident
+                } else if (event.key === 'ArrowRight' && input.selectionStart === input.value.length) {
+                    target = cell.nextElementSibling ? cell.nextElementSibling.querySelector('input') : null;
+                } else if (event.key === 'ArrowLeft' && input.selectionEnd === 0) {
+                    target = cell.previousElementSibling ? cell.previousElementSibling.querySelector('input') : null;
+                }
+
+                if (target) {
+                    event.preventDefault();
+                    target.focus();
+                    target.select();
+                }
+            });
+        });
+    }
+
+    /* ------------------------------------------------------------------
      * After a form comes back with errors, put the cursor in the first
      * field that needs attention
      * ------------------------------------------------------------------ */
@@ -267,6 +307,7 @@
 
     initToggles();
     initPrint();
+    initSheetGrids();
     initFocusFirstError();
     initDropdowns();
     initTabs();

@@ -126,10 +126,16 @@ final class ScheduleService
 
             $label = Format::classLabel((int) $class['grade_level'], (int) $class['section']);
             ActivityLog::record($adminId, 'schedule.updated', 'Ndryshoi orarin e klasës ' . $label . '.', 'class', $classId);
-            Notification::notifyClass($classId, 'schedule.changed', 'Orari i klasës ' . $label . ' ndryshoi', 'Shikoni orarin e ri të klasës.', '/nxenesi/orari');
+            self::notifyStudents($classId, $label);
 
             return true;
         });
+    }
+
+    /** Tell a class's students their timetable changed (one note until they have seen it). */
+    public static function notifyStudents(int $classId, string $label): void
+    {
+        Notification::notifyClass($classId, 'schedule.changed', 'Orari i klasës ' . $label . ' ndryshoi', 'Shikoni orarin e ri të klasës.', '/nxenesi/orari');
     }
 
     /** Same week, same order — for comparing before and after. */

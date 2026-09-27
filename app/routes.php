@@ -21,6 +21,7 @@ use App\Controllers\Admin\DutyController as AdminDuty;
 use App\Controllers\Admin\GradeController as AdminGrades;
 use App\Controllers\Admin\RoomController as AdminRooms;
 use App\Controllers\Admin\ScheduleController as AdminSchedule;
+use App\Controllers\Admin\ScheduleSheetController as AdminScheduleSheet;
 use App\Controllers\Admin\SlipController as AdminSlips;
 use App\Controllers\Admin\StudentController as AdminStudents;
 use App\Controllers\Admin\SubjectController as AdminSubjects;
@@ -109,6 +110,10 @@ $router->group(['prefix' => '/admin', 'middleware' => ['auth', 'password.changed
     $r->get('/orari/klasa/{id:\d+}', [AdminSchedule::class, 'edit'], 'admin.schedule.class');
     $r->post('/orari/klasa/{id:\d+}', [AdminSchedule::class, 'update'], 'admin.schedule.class.update');
     $r->get('/orari/mesimdhenesi/{id:\d+}', [AdminSchedule::class, 'teacher'], 'admin.schedule.teacher');
+    // The timetable in numbers, as the school prints it
+    $r->get('/orari/numrat', [AdminScheduleSheet::class, 'index'], 'admin.schedule.sheet');
+    $r->post('/orari/numrat/{shift:\d+}', [AdminScheduleSheet::class, 'update'], 'admin.schedule.sheet.update');
+    $r->post('/orari/numrat/{shift:\d+}/apliko', [AdminScheduleSheet::class, 'apply'], 'admin.schedule.sheet.apply');
     $r->get('/orari/oret', [AdminBells::class, 'edit'], 'admin.bells');
     $r->post('/orari/oret/{shift:\d+}', [AdminBells::class, 'update'], 'admin.bells.update');
 

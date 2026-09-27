@@ -26,7 +26,6 @@ use App\Support\Timetable;
         $count = count($data['periods']);
         $rows = max($count + 1, $posted !== null ? max(array_keys(($posted['starts'] ?? []) + ($posted['ends'] ?? [])) ?: [0]) : 0);
         $rows = min($rows, 12);
-        $shiftName = Labels::shift($shift, true);
         ?>
         <section class="card" aria-labelledby="shift-<?= e($shift) ?>">
             <header class="card__head">
@@ -93,7 +92,7 @@ use App\Support\Timetable;
                     Kohët shkruhen si 08:00. Për të shtuar një orë, plotësoni rreshtin e ri; për të hequr orën e fundit, fshini kohët e saj.
                 </p>
                 <div class="form-actions">
-                    <button class="btn btn--primary" type="submit">Ruaj orët e <?= e($shiftName === 'paradite' ? 'paradites' : 'pasdites') ?></button>
+                    <button class="btn btn--primary" type="submit">Ruaj orët e <?= e(Labels::SHIFTS_OF[$shift]) ?></button>
                 </div>
             </form>
         </section>

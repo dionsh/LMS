@@ -6,6 +6,7 @@
  */
 
 use App\Support\Format;
+use App\Support\Labels;
 ?>
 <header class="page-header">
     <div>
@@ -27,7 +28,7 @@ use App\Support\Format;
     <div class="callout" role="status">
         <div>
             <strong>Sot keni kujdestarinë e ditës: <?= e($dutyToday[0]['post']) ?>.</strong>
-            <p class="meta">Ndërrimi i <?= e((int) $dutyToday[0]['shift'] === 1 ? 'paradites' : 'pasdites') ?>.</p>
+            <p class="meta">Ndërrimi i <?= e(Labels::SHIFTS_OF[(int) $dutyToday[0]['shift']]) ?>.</p>
         </div>
     </div>
 <?php endif; ?>

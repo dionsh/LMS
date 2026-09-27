@@ -19,7 +19,6 @@ use App\Support\Format;
 use App\Support\Labels;
 
 $days = Labels::SCHOOL_DAYS;
-$shiftName = Labels::shift($shift, true);
 $classCount = array_sum(array_map('count', $byGrade));
 $columns = count($days) * count($periods) + 2;
 $incomplete = [];
@@ -42,6 +41,7 @@ $query = static fn (array $change): array => array_merge(['ndrrimi' => $shift, '
         </p>
     </div>
     <div class="cluster">
+        <a class="btn btn--secondary" href="<?= e(url('/admin/orari/numrat', ['ndrrimi' => $shift])) ?>"><?= icon('grid') ?>Orari me numra</a>
         <a class="btn btn--secondary" href="<?= e(url('/admin/orari/oret')) ?>"><?= icon('clock') ?>Orët e mësimit</a>
         <button class="btn btn--primary" type="button" data-print><?= icon('print') ?>Printo</button>
     </div>
@@ -98,7 +98,7 @@ $query = static fn (array $change): array => array_merge(['ndrrimi' => $shift, '
 <?php if ($classCount === 0): ?>
     <div class="empty">
         <div class="empty__mark motif" aria-hidden="true"></div>
-        <h2 class="empty__title">Asnjë klasë në ndërrimin e <?= e($shiftName === 'paradite' ? 'paradites' : 'pasdites') ?>.</h2>
+        <h2 class="empty__title">Asnjë klasë në ndërrimin e <?= e(Labels::SHIFTS_OF[$shift]) ?>.</h2>
         <p class="empty__text">Klasat shtohen te <a href="<?= e(url('/admin/klasat')) ?>">Klasat</a>.</p>
     </div>
 <?php elseif ($periods === []): ?>
