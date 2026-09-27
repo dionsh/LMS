@@ -801,8 +801,14 @@ Greeting by hour: Mirëmëngjes (< 12:00) · Mirëdita (< 18:00) · Mirëmbrëma
    - each class keeps its room.
 
    The sheet gives no clock times, so the bell schedule of decision 4 stands.
-10. **Teachers** (staff list 2026–2027). The school has 72 teachers, numbered 1–73; number 52 is empty, and 74–76 are marked "mz". The number is the one in the timetable's cells. A full teaching norm is **20 lessons a week**; part-time teachers have fewer (`teacher_profiles.weekly_norm`).
+10. **Teachers** (staff list 2026–2027). The school has 72 teachers, numbered 1–73. The number is the one in the timetable's cells.
+    - Number 52 is empty. 74–76 are marked "mz", which means *Mësim zgjedhor* (the elective lessons); no teacher is named for them.
+    - 53 is Besarta Ajeti (the timetable spells it "Besata").
+    - A full teaching norm is **20 lessons a week**; part-time teachers have fewer (`teacher_profiles.weekly_norm`).
+    - Subjects known so far: 26 (Enver Bajrami) teaches Matematikë in XII-1 and XII-2 and career orientation, the elective (*Mësim zgjedhor*), in XII-1, XII-2, XII-5, XII-8, XII-9 and XII-10.
 11. **Daily duty** (*Kujdestaria e ditës*), from the bottom of the morning timetable. Each school day one teacher keeps watch in the hall (*Salla*) and two on each of the three floors. Some places are empty on the sheet. Every teacher on the morning roster teaches that morning.
+12. **School details** (from the school's letterhead, 27 Sep 2026), in `settings`: Rruga “Fatmir Hasani” nr. 14, 70000 Ferizaj · +383 49 923 828 · imersion7@gmail.com · principal (*drejtori*) Bajram Rexhepi. They appear in the public site's top bar and footer.
+13. **Git history is kept as it is.** The timetable photo removed from the repository stays in the history of earlier commits; the history is not rewritten.
 
 ### Design defaults (change any time)
 
@@ -813,11 +819,10 @@ Greeting by hour: Mirëmëngjes (< 12:00) · Mirëdita (< 18:00) · Mirëmbrëma
 
 ### Still open
 
-- **Which subject each teacher teaches** (number → subject). The school will send it. Until then the real morning timetable is kept as teacher numbers (the timetable in numbers, §9.1), and the morning classes keep a demo timetable taught by demo teachers. Once the subjects are entered, the morning classes can be applied.
+- **Which subject each teacher teaches** (number → subject). The school will send it (only 26 is known so far). Until then the real morning timetable is kept as teacher numbers (the timetable in numbers, §9.1), and the morning classes keep a demo timetable taught by demo teachers. Once the subjects are entered, the morning classes can be applied.
 - **The afternoon timetable** (X-1…X-15, XI-8…XI-15), with its homeroom teachers and daily duty. The school will send it.
-- **"mz" (74–76)** on the staff list: what these numbers stand for.
 - **Credential delivery.** Printed slips work without any setup. Should the school also want them e-mailed, that needs the school's SMTP account.
-- **Real school details** (address, phone, e-mail, founding year, principal, about text, higher-resolution photos) are left empty in the DB until provided. Nothing is invented.
+- **The rest of the school's details** (founding year, about text, the principal's message, map, social media, higher-resolution photos) are left empty in the DB until provided. Nothing is invented.
 
 ### Out of scope for v1 (good candidates later)
 

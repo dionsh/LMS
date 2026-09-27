@@ -20,12 +20,12 @@ INSERT INTO settings (setting_key, setting_value) VALUES
   ('school_short_name',         'Kuvendi i Arbërit'),
   ('school_tagline',            ''),
   ('school_founded_year',       ''),
-  ('principal_name',            ''),
-  -- Contact
-  ('school_address',            ''),
-  ('school_city',               ''),
-  ('school_phone',              ''),
-  ('school_email',              ''),
+  ('principal_name',            'Bajram Rexhepi'),
+  -- Contact (from the school's letterhead)
+  ('school_address',            'Rruga “Fatmir Hasani” nr. 14'),
+  ('school_city',               '70000 Ferizaj'),                -- postal code and city
+  ('school_phone',              '+383 49 923 828'),
+  ('school_email',              'imersion7@gmail.com'),
   ('school_map_url',            ''),
   ('facebook_url',              ''),
   ('instagram_url',             ''),

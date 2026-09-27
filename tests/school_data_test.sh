@@ -43,6 +43,7 @@ check "72 teachers with a timetable number"          "72" "$(SQL "SELECT COUNT(*
 check "numbers 1–73, 52 left empty as on the list"   "1 73 0" "$(SQL "SELECT CONCAT(MIN(timetable_number),' ',MAX(timetable_number),' ',SUM(timetable_number = 52)) FROM teacher_profiles")"
 check "…e.g. 26 is Enver Bajrami"                    "Enver Bajrami" "$(SQL "SELECT CONCAT(u.first_name,' ',u.last_name) FROM teacher_profiles tp JOIN users u ON u.id=tp.user_id WHERE tp.timetable_number = 26")"
 check "…53 is Besarta Ajeti (as on the staff list)"  "Besarta Ajeti" "$(SQL "SELECT CONCAT(u.first_name,' ',u.last_name) FROM teacher_profiles tp JOIN users u ON u.id=tp.user_id WHERE tp.timetable_number = 53")"
+check "26 teaches Matematikë and Mësim zgjedhor"     "Mat. Zgjedh." "$(SQL "SELECT GROUP_CONCAT(s.short_name ORDER BY s.sort_order SEPARATOR ' ') FROM teacher_subjects ts JOIN subjects s ON s.id = ts.subject_id JOIN teacher_profiles tp ON tp.user_id = ts.teacher_id WHERE tp.timetable_number = 26")"
 check "the school's teachers are on the public site" "72" "$(SQL "SELECT COUNT(*) FROM teacher_profiles WHERE show_on_website = 1")"
 check "demo teachers never are, and have no number"  "0" "$(SQL "SELECT COUNT(*) FROM teacher_profiles tp JOIN users u ON u.id=tp.user_id WHERE u.first_name='Demo' AND (tp.show_on_website = 1 OR tp.timetable_number IS NOT NULL)")"
 check "no staff record can sign in (except the test account)" "0" "$(SQL "SELECT COUNT(*) FROM users WHERE role='teacher' AND password_hash IS NOT NULL AND username <> 'prove.mesimdhenes'")"
@@ -72,6 +73,14 @@ check "every class plans 30 lessons (6 × 5 days)"    "30" "$(SQL "SELECT GROUP_
 check "teachers teach only their subjects"           "0"  "$(SQL "SELECT COUNT(*) FROM class_subjects cs LEFT JOIN teacher_subjects ts ON ts.teacher_id = cs.teacher_id AND ts.subject_id = cs.subject_id WHERE ts.teacher_id IS NULL")"
 check "no teacher above the 20-lesson norm"          "0"  "$(SQL "SELECT COUNT(*) FROM (SELECT cs.teacher_id, SUM($HOURS) h $CS_HOURS GROUP BY cs.teacher_id HAVING h > 20) x")"
 check "the test teacher: Matematikë in 3 classes"    "X-13 XI-5 XII-1" "$(SQL "SELECT GROUP_CONCAT($LABEL ORDER BY c.grade_level SEPARATOR ' ') FROM class_subjects cs JOIN classes c ON c.id = cs.class_id JOIN users u ON u.id = cs.teacher_id WHERE u.username = 'prove.mesimdhenes'")"
+
+echo; echo "== School details (letterhead) =="
+check "principal"                                     "Bajram Rexhepi" "$(SQL "SELECT setting_value FROM settings WHERE setting_key = 'principal_name'")"
+check "phone and e-mail"                              "+383 49 923 828 imersion7@gmail.com" "$(SQL "SELECT CONCAT((SELECT setting_value FROM settings WHERE setting_key = 'school_phone'),' ',(SELECT setting_value FROM settings WHERE setting_key = 'school_email'))")"
+check "the public home page"                          "200" "$(code "$T/guest" /)"
+contains "…address in the footer"                     "$T/body" "Rruga “Fatmir Hasani” nr. 14, 70000 Ferizaj"
+contains "…phone to call"                             "$T/body" 'href="tel:+38349923828"'
+contains "…e-mail to write to"                        "$T/body" 'href="mailto:imersion7@gmail.com"'
 
 echo; echo "== Signing in =="
 X="$T/x"

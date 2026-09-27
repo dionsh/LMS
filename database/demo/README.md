@@ -24,7 +24,7 @@ Loads the 2026/2027 structure from `school-data.php`. It is safe to run again; n
   - afternoon: **X-1 … X-15 and XI-8 … XI-15**.
 - **The school's 72 teachers** with their timetable numbers (`staff.php`, from the staff list 2026–2027).
   - They are records **without sign-in credentials** until the admin issues login slips (T05), and are shown on the public website.
-  - Which subjects they teach is not known yet: `staff.php` has an empty `subjects` list for each, to be filled from the school's list.
+  - Which subjects they teach is filled into `staff.php` as the school sends it. So far only 26 (Enver Bajrami) is known: Matematikë and Mësim zgjedhor (career orientation). Subjects go to a teacher who has none in the database yet, so subjects ticked in the admin panel are kept.
 - **The official morning timetable** (`timetable-morning.php`): the printed sheet, a teacher's number in every cell. It is loaded into the timetable in numbers (`/admin/orari/numrat`) while the morning has none, so changes made there are kept.
   - It becomes a class's timetable as soon as the subjects of all the class's teachers are known. It replaces only a demo timetable; a class whose timetable has real teachers is left alone.
   - Until then the morning classes keep the demo timetable below.

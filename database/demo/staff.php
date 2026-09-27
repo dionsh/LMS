@@ -6,12 +6,14 @@ declare(strict_types=1);
  * REAL — the school's teachers for 2026/2027 and their numbers, from the
  * school's list "Lista e mësimdhënësve për vitin shkollor 2026–2027" (signed
  * by the principal). The number is the one used in every cell of the printed
- * timetable. Number 52 is empty on the list; 74–76 are marked only "mz".
+ * timetable. Number 52 is empty on the list; 74–76 are marked only "mz",
+ * which the school says means Mësim zgjedhor (no teacher named).
  *
- * subjects: filled in when the school sends which subject each teacher
- * teaches. Until then a teacher's subjects are left as they are in the
- * database (edited under Mësimdhënësit), and the real timetable cannot be
- * turned into lessons with subjects yet (see orari-paradite.php).
+ * subjects: filled in as the school says which subject each teacher teaches.
+ * They are given to a teacher who has none in the database yet (subjects
+ * ticked under Mësimdhënësit are kept). The timetable in numbers
+ * (timetable-morning.php) becomes lessons once all of a class's teachers
+ * have their subjects.
  *
  *   number => [first name, last name, subjects]
  */
@@ -42,7 +44,7 @@ return [
     23 => ['Muzafer', 'Hafizi', []],
     24 => ['Lindrit', 'Rysha', []],
     25 => ['Avni', 'Hashani', []],
-    26 => ['Enver', 'Bajrami', []],
+    26 => ['Enver', 'Bajrami', ['Matematikë', 'Mësim zgjedhor']],  // Mësim zgjedhor here is career orientation
     27 => ['Naser', 'Tahiri', []],
     28 => ['Fedona', 'Beqiri', []],
     29 => ['Minire', 'Kurteshi', []],
