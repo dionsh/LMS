@@ -194,7 +194,7 @@ Legend: ✅ done · 🟡 partly done · 🔜 next · ⬜ planned
     - **applying** it: every class whose numbers can all be read as its subjects gets the sheet as its timetable, its subjects get the sheet's teachers, and its students are notified
     - the official morning timetable in `database/demo/timetable-morning.php`, which the loader applies to each class once its teachers' subjects are known
     - fixed: the timetable sheets and tables no longer make the page wider than a phone screen
-  - Waiting for the school: which subject each teacher teaches. Once that is in `database/demo/staff.php` (or ticked on each teacher's page), the morning classes become ready.
+  - Waiting for the school: which subject each teacher teaches. Once that is in `database/demo/staff.php` (or ticked on each teacher's page), the morning classes become ready. The school will send it, with the afternoon timetable, later in the project (probably near the end).
 
 ## Phase 3 — LMS core
 
@@ -215,7 +215,7 @@ Legend: ✅ done · 🟡 partly done · 🔜 next · ⬜ planned
     - dashboards: the now/next card and today's lessons (the rest of the dashboards stays in T15)
     - admin: any teacher's week (`/admin/orari/mesimdhenesi/{id}`), linked from the teacher's page
     - moved to T10: the page for one subject (`/nxenesi/lendet/{id}`), because it holds homework and marks
-- ⬜ **T10 · Assignments**
+- 🔜 **T10 · Assignments**
   - Deliverables:
     - the student's page for one subject (teacher, lessons, homework), `/nxenesi/lendet/{id}`
     - teacher create / edit / draft / publish with attachments
