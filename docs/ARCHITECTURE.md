@@ -215,7 +215,7 @@ Each session has a token (`random_bytes(32)`). Every form carries it as a hidden
 
 ## 7. Database design
 
-30 tables and 44 foreign keys, verified by importing into MariaDB and running 13 negative tests (§7.4).
+33 tables, verified by importing into MariaDB and running 21 negative tests (§7.4, `tests/database_test.sh`).
 
 ### 7.1 Core relationships
 
@@ -225,6 +225,11 @@ erDiagram
     users ||--o| teacher_profiles : ""
     academic_years ||--|{ terms : "divided into"
     academic_years ||--|{ classes : "has"
+    grade_levels ||--o{ classes : "grade of"
+    grade_levels ||--o{ grade_subjects : "curriculum"
+    subjects ||--o{ grade_subjects : "studied in"
+    users ||--o{ teacher_subjects : "teaches"
+    subjects ||--o{ teacher_subjects : "taught by"
     users ||--o{ enrollments : "student"
     classes ||--o{ enrollments : "contains"
     classes ||--o{ class_subjects : "studies"
@@ -252,7 +257,7 @@ erDiagram
 | Configuration | `settings` |
 | People | `users`, `student_profiles`, `teacher_profiles` |
 | Calendar | `academic_years`, `terms` |
-| Structure | `subjects`, `rooms`, `lesson_periods`, `classes`, `enrollments`, `class_subjects`, `schedule_entries` |
+| Structure | `grade_levels`, `subjects`, `grade_subjects` (curriculum), `teacher_subjects`, `rooms`, `lesson_periods`, `classes`, `enrollments`, `class_subjects`, `schedule_entries` |
 | Coursework | `grade_types`, `assignments`, `assignment_files`, `submissions`, `submission_files`, `assessments`, `grades`, `term_grades` |
 | Communication | `post_categories`, `posts`, `announcements`, `notifications` |
 | Public content | `contact_messages`, `faqs`, `useful_links` |
@@ -260,8 +265,8 @@ erDiagram
 
 ### 7.3 Key design decisions
 
-1. **`class_subjects` is the hub.** "Matematikë in X/13, taught by Prof. Krasniqi" is one row. Assignments, tests, marks and timetable slots all point at it. If the teacher changes mid-year, the new teacher inherits the full history of that class-subject.
-2. **`enrollments` per academic year**, not a `class_id` on the student. This keeps last year's class and grades intact. The end-of-year promotion (X/13 → XI/13) becomes a simple insert for the new year.
+1. **`class_subjects` is the hub.** "Matematikë in X-13, taught by Prof. Krasniqi" is one row. Assignments, tests, marks and timetable slots all point at it. If the teacher changes mid-year, the new teacher inherits the full history of that class-subject.
+2. **`enrollments` per academic year**, not a `class_id` on the student. This keeps last year's class and grades intact. The end-of-year promotion (X-13 → XI-13) becomes a simple insert for the new year.
 3. **Homework ≠ tests.** `assignments` are handed in through the platform (with files); `assessments` are tests, exams and oral answers that happen in class and whose results the teacher types in. Both feed the **single `grades` table**, along with manual marks.
 4. **Every mark is 1–5** (the Kosovo scale), enforced by a CHECK constraint. Optional raw `points` are stored when a test has a points scale. The admin-editable `grade_thresholds` (default 50/65/80/90 %) *suggest* a mark from the points, and the teacher can always override.
 5. **Averages are computed, the term grade is decided.** The subject average per term is the weighted mean of marks (`Σ grade×weight / Σ weight`, weights from `grade_types`, all 1.00 by default). The teacher then records the **term grade** (`term_grades`) informed by that average, as Kosovo practice requires. Nothing is silently auto-finalised.
@@ -271,10 +276,18 @@ erDiagram
 9. **Deletion policy.** Academic records use `RESTRICT`: a student with marks can't be deleted, only **deactivated**. Purely dependent data (files, profile, notifications) uses `CASCADE`. Removing a teacher sets their class-subjects to "unassigned" (`SET NULL`) and keeps the history.
 10. **Files are outside the web root.** Assignment materials and submissions are stored in `storage/` under random names and streamed by PHP after a policy check. Only public images (post covers, staff photos) live in `public/uploads/`.
 11. **School information is a key/value `settings` table**, so the admin can edit the name, contact details, about texts and platform switches without a developer.
+12. **Grade → curriculum → class → subject + teacher.** How the school actually works: students stay in their class's room and teachers come to them.
+    - Grades are rows in `grade_levels` (X, XI, XII; a grade the school adds needs no code change). The Roman numeral is computed.
+    - `grade_subjects` is the curriculum (*plani mësimor*): the subjects each grade studies and how many lessons a week.
+    - A new class automatically gets one `class_subjects` row per subject of its grade.
+    - A subject added to a grade's curriculum is added to every class of that grade. A subject taken out leaves a class only if nothing depends on it yet (no teacher, timetable or marks).
+13. **Weekly hours are inherited.** `class_subjects.weekly_hours` is NULL when the class follows the curriculum. A number there is a class-specific exception. Changing the curriculum therefore updates every class that follows it.
+14. **Teachers' subjects and numbers.** `teacher_subjects` records what each teacher teaches. Those teachers are offered first when a subject is assigned in a class, but the list does not restrict the choice. `teacher_profiles.timetable_number` is the teacher's number on the school's printed timetable, where cells show "25" instead of a name. It is unique, and optional.
+15. **One class per room and shift.** A class's own room (`classes.home_room_id`) can be shared by a morning and an afternoon class, never by two classes in the same shift (checked when saving a class).
 
 ### 7.4 Verified behaviour
 
-Each of these statements was run against a throwaway copy of the schema. MariaDB rejected every one:
+Each of these statements is run against a throwaway copy of the schema by `tests/database_test.sh`. MariaDB rejects every one:
 
 - a timetable slot whose class doesn't match its subject assignment
 - two lessons for the same class in the same slot
@@ -289,18 +302,23 @@ Each of these statements was run against a throwaway copy of the schema. MariaDB
 - deleting a subject still taught in a class
 - deleting a class that still has students
 - a duplicate e-mail differing only in case
+- a duplicate username, an account status that does not exist
+- a class in a grade the school does not have; deleting a grade that still has classes
+- curriculum or class hours outside 1–12; a curriculum row for a grade that does not exist
+- two teachers with the same timetable number
 
-Removing a teacher correctly un-assigned them and kept all marks.
+Removing a teacher correctly un-assigned them and kept all marks. A subject that is only in the curriculum can be deleted (its curriculum rows go with it).
 
 ---
 
 ## 8. Core workflows
 
 **W1 — Admin sets up the school year**
-1. Create the year and its terms, then subjects, rooms and teacher accounts.
-2. Create the classes (grade, section, stream, shift, homeroom teacher).
-3. Inside each class, assign subject → teacher (`class_subjects`).
-4. Build the timetable in the grid builder (conflict-checked).
+1. Create the year and its terms (*Vitet shkollore*), rooms (*Sallat*) and teacher accounts. For each teacher, tick the subjects they teach and, optionally, their number on the printed timetable.
+2. Check the curriculum (*Plani mësimor*): subjects per grade and weekly hours.
+3. Create the classes (grade, section, shift, stream, homeroom teacher, own room). Each one gets its grade's subjects automatically.
+4. Inside each class, pick the teacher for every subject (`class_subjects`). The subject's own teachers are listed first.
+5. Build the timetable in the grid builder (conflict-checked).
 
 **W2 — Student onboarding**
 1. The admin adds the students of a class. Accounts are created active and enrolled in the class, each with a generated username.
@@ -474,8 +492,12 @@ URLs are Albanian (without diacritics); code identifiers are English.
 | `/admin/perdoruesit/{id}/ndrysho` | edit any account; issue a login slip; activate/deactivate |
 | POST `/admin/nxenesit/fletet` · `/admin/mesimdhenesit/fletet` | login slips for a class · for all teachers without credentials |
 | `/admin/fletet-e-hyrjes/{id}` | the printable slips (this admin's session only, 30 minutes) |
-| `/admin/vitet-shkollore` · `/admin/lendet` · `/admin/sallat` | years & terms · subjects · rooms |
-| `/admin/klasat` · `/admin/klasat/{id}` | classes · enrollments, subject/teacher assignment |
+| `/admin/vitet-shkollore` (+ `/shto`, `/{id}/ndrysho`, POST `/{id}/aktual`) | school years & semesters, the current year |
+| `/admin/plani-mesimor` · `/admin/plani-mesimor/{grade}` | the curriculum: grades, their subjects and weekly hours, default shift |
+| `/admin/lendet` (+ `/shto`, `/{id}/ndrysho`) | subjects and the grades that study them |
+| `/admin/sallat` (+ `/{id}/ndrysho`) | rooms |
+| `/admin/klasat` (+ `/shto`, `/{id}/ndrysho`) | classes |
+| `/admin/klasat/{id}` (+ POST `/lendet`, `/lendet/shto`, `/lendet/hiq`) | one class: who teaches each subject and how many hours, its students |
 | `/admin/orari` · `/admin/orari/oret` | timetable builder · bell schedule |
 | `/admin/detyrat` · `/admin/notat` | oversight of assignments · marks |
 | `/admin/lajmet` · `/admin/kategorite` | posts · categories |
@@ -636,7 +658,8 @@ Every module has a designed empty state in plain Albanian — e.g. *"Nuk keni de
 | Temporary password | Fjalëkalim i përkohshëm | Credential slip | Fleta e hyrjes |
 | Student(s) | Nxënësi · Nxënësit | Teacher(s) | **Mësimdhënësi · Mësimdhënësit** |
 | Administrator | Administratori | Homeroom teacher | Kujdestari i klasës |
-| Class (X/13) | Klasa | Subject(s) | Lënda · Lëndët |
+| Class (XII-1) | Klasa (the official timetable says *paralelja*) | Subject(s) | Lënda · Lëndët |
+| Grade (X, XI, XII) | Klasa X · XI · XII | Curriculum | **Plani mësimor** |
 | Timetable · Period · Room | Orari · Ora · Salla | Shift | Ndërrimi (paradite / pasdite) |
 | Homework / Assignment | Detyra · Detyrat | Submit homework | **Dorëzo detyrën** |
 | Submission(s) | Dorëzimi · Dorëzimet | Deadline | Afati (i dorëzimit) |
@@ -684,18 +707,29 @@ Greeting by hour: Mirëmëngjes (< 12:00) · Mirëdita (< 18:00) · Mirëmbrëma
 
 ## 14. Decisions
 
-### Confirmed by the school (26 Sep 2026)
+### Confirmed by the school (26–27 Sep 2026)
 
 1. **No self sign-up.** The school creates every account and hands the credentials to the student; the site offers *Hyr* only (§6.1).
 2. **Only the administration edits the timetable.** Teachers see theirs read-only.
 3. **Two semesters** (*Gjysmëvjetori i parë / i dytë*).
 4. **Bell schedule.** Two shifts of six 45-minute lessons. The morning starts at 08:00 and the afternoon at 14:00. Breaks are 5 minutes, except two 10-minute main breaks after the 2nd and the 4th lesson (seeded in `lesson_periods`).
-5. **School structure.** Three grades — X, XI, XII — with about 15 classes each, written **X/13, XI/5, XII/1**. That is ≈ 45 classes and well over a thousand students, so every admin list is searchable, filterable by grade and class, and paginated. Every class has a *kujdestar* (homeroom teacher).
+5. **School structure.** Three grades — X, XI, XII. Classes are written **XII-1, XI-5, X-13**, as on the school's official timetable. (They were written X/13 until 27 Sep 2026.) The morning shift has **XI-1 … XI-7 and XII-1 … XII-15**; grade X is in the afternoon. That is well over a thousand students, so every admin list is searchable, filterable by grade and class, and paginated. Every class has a *kujdestar* (homeroom teacher). More grades and classes can be added from the admin panel.
 6. **Terminology:** *Ballina*, *Mësimdhënësit*, *Dil*, and *Njoftimet* (announcements) vs *Lajmërimet* (personal notifications).
 7. **Brand assets.**
    - `images/logo1.png` is the only logo file; no vector original exists. The SVG mark rebuilt from it (§11.9) is the logo used everywhere.
    - There are no higher-resolution photos of the school. The public site therefore leads with typography and the logo's line motif. The one photo (640×480) appears only behind dark overlays, never as a sharp full-bleed image.
    - The sign-in slogan *"Dija ndërtohet bashkë."* is approved for now.
+8. **Subjects** (27 Sep 2026). Every grade studies Gjuhë shqipe, Gjuhë angleze, Gjuhë gjermane, Matematikë, Kimi, Biologji, Fizikë, Edukatë fizike, Mësim zgjedhor, Teknologji and Gjeografi. In addition:
+   - X: Muzikë, Art figurativ and Histori
+   - XI: Filozofi dhe psikologji
+   - XII: Astronomi
+9. **The official morning timetable** (*Orari i mësimit, Paradite, 2026/2027*, dated 21.09.2026, `images/orari.jpg`) confirms how lessons work:
+   - every class has six lessons a day, Monday to Friday;
+   - the printed seventh column is empty;
+   - cells hold the teacher's number rather than a name;
+   - each class keeps its room.
+
+   The sheet gives no clock times, so the bell schedule of decision 4 stands.
 
 ### Design defaults (change any time)
 
@@ -706,6 +740,9 @@ Greeting by hour: Mirëmëngjes (< 12:00) · Mirëdita (< 18:00) · Mirëmbrëma
 
 ### Still open
 
+- **Weekly hours per subject** (the curriculum). Not given yet. The demo data uses placeholder hours that add up to 30 a week.
+- **The teacher-number legend** that belongs to the official timetable (number → teacher → subject). With it, the real morning timetable can be entered as printed.
+- **Number of classes in grade X** (the demo keeps 15) and the afternoon timetable.
 - **Credential delivery.** Printed slips work without any setup. Should the school also want them e-mailed, that needs the school's SMTP account.
 - **Real school details** (address, phone, e-mail, founding year, principal, about text, higher-resolution photos) are left empty in the DB until provided. Nothing is invented.
 

@@ -54,7 +54,7 @@ echo; echo "== Lists, search, filters, pages =="
 code $A /admin/nxenesit >/dev/null
 contains "students list counts everyone"                    "$T/body" "13 nxënës"
 code $A "/admin/nxenesit?klasa=$CLASS_XII1" >/dev/null
-contains "filter by class XII/1"                            "$T/body" "Nxënësit e klasës XII/1"
+contains "filter by class XII-1"                            "$T/body" "Nxënësit e klasës XII-1"
 contains "…shows its 4 students"                            "$T/body" "4 nxënës"
 code $A "/admin/nxenesit?q=gashi" >/dev/null
 contains "search by surname finds Ariana Gashi"             "$T/body" "ariana.gashi"
@@ -82,11 +82,11 @@ check "valid student with slip → printable slip page"      "302 /admin/fletet-
 SLIP_URL=$(echo "$r" | awk '{print $2}')
 code $A "$SLIP_URL" >/dev/null
 contains "slip shows the generated username"                "$T/body" "test.nxenesi"
-contains "slip shows the class"                             "$T/body" "Nxënës · Klasa XII/1"
+contains "slip shows the class"                             "$T/body" "Nxënës · Klasa XII-1"
 contains "slip shows the full sign-in address"              "$T/body" "$B/hyr"
 PASSWORD=$(first_password "$T/body")
 check "slip carries a temporary password"                   "yes" "$(echo "$PASSWORD" | grep -qE '^[a-z]+-[a-z]+-[a-z]+-[0-9]{2}$' && echo yes || echo no)"
-check "student enrolled in XII/1 with profile"              "XII/1 T-001 F" "$(SQL "SELECT CONCAT(ELT(c.grade_level-9,'X','XI','XII'),'/',c.section,' ',sp.student_number,' ',sp.gender) FROM users u JOIN enrollments e ON e.student_id=u.id JOIN classes c ON c.id=e.class_id JOIN student_profiles sp ON sp.user_id=u.id WHERE u.username='test.nxenesi'")"
+check "student enrolled in XII-1 with profile"              "XII-1 T-001 F" "$(SQL "SELECT CONCAT(ELT(c.grade_level-9,'X','XI','XII'),'-',c.section,' ',sp.student_number,' ',sp.gender) FROM users u JOIN enrollments e ON e.student_id=u.id JOIN classes c ON c.id=e.class_id JOIN student_profiles sp ON sp.user_id=u.id WHERE u.username='test.nxenesi'")"
 N="$T/new"
 check "the new student signs in with the slip"             "302 /ndrysho-fjalekalimin" "$(login $N test.nxenesi "$PASSWORD")"
 A2="$T/admin2"; login $A2 prove.admin Prove-Admin-2026 >/dev/null
@@ -104,13 +104,13 @@ contains "…says the number belongs to another student"     "$T/body" "Ky numë
 echo; echo "== Editing =="
 NEW=$(SQL "SELECT id FROM users WHERE username='test.nxenesi'")
 check "edit page"                                           "200" "$(code $A /admin/perdoruesit/$NEW/ndrysho)"
-check "move to XI/5 and rename"                             "302 /admin/perdoruesit/$NEW/ndrysho" "$(post $A /admin/perdoruesit/$NEW/ndrysho /admin/perdoruesit/$NEW/ndrysho --data first_name=T%C3%ABsta --data last_name=Nx%C3%ABn%C3%ABsi --data-urlencode class_id=$CLASS_XI5 --data-urlencode student_number=T-001 --data-urlencode gender=F --data-urlencode date_of_birth=2009-02-03)"
-check "…saved in the database"                              "Tësta XI/5" "$(SQL "SELECT CONCAT(u.first_name,' ',ELT(c.grade_level-9,'X','XI','XII'),'/',c.section) FROM users u JOIN enrollments e ON e.student_id=u.id JOIN classes c ON c.id=e.class_id WHERE u.id=$NEW")"
+check "move to XI-5 and rename"                             "302 /admin/perdoruesit/$NEW/ndrysho" "$(post $A /admin/perdoruesit/$NEW/ndrysho /admin/perdoruesit/$NEW/ndrysho --data first_name=T%C3%ABsta --data last_name=Nx%C3%ABn%C3%ABsi --data-urlencode class_id=$CLASS_XI5 --data-urlencode student_number=T-001 --data-urlencode gender=F --data-urlencode date_of_birth=2009-02-03)"
+check "…saved in the database"                              "Tësta XI-5" "$(SQL "SELECT CONCAT(u.first_name,' ',ELT(c.grade_level-9,'X','XI','XII'),'-',c.section) FROM users u JOIN enrollments e ON e.student_id=u.id JOIN classes c ON c.id=e.class_id WHERE u.id=$NEW")"
 check "…username stays the same"                            "test.nxenesi" "$(SQL "SELECT username FROM users WHERE id=$NEW")"
 check "teacher profile fields save"                         "302 /admin/perdoruesit/$ENVER/ndrysho" "$(post $A /admin/perdoruesit/$ENVER/ndrysho /admin/perdoruesit/$ENVER/ndrysho --data-urlencode first_name=Enver --data-urlencode last_name=Bajrami --data-urlencode title=Prof. --data specialization=Matematik%C3%AB --data-urlencode show_on_website=1)"
 check "…specialization stored"                              "Matematikë 1" "$(SQL "SELECT CONCAT(specialization,' ',show_on_website) FROM teacher_profiles WHERE user_id=$ENVER")"
 code $A /admin/perdoruesit/$ENVER/ndrysho >/dev/null
-contains "teacher edit page shows the homeroom class"      "$T/body" "Kujdestar i klasës XII/1"
+contains "teacher edit page shows the homeroom class"      "$T/body" "Kujdestar i klasës XII-1"
 
 echo; echo "== Login slips for teachers =="
 r=$(post $A /admin/perdoruesit/$ENVER/fleta /admin/perdoruesit/$ENVER/ndrysho)
@@ -130,8 +130,8 @@ echo; echo "== Login slips for a class =="
 CW=$(SQL "SELECT COUNT(*) FROM users u JOIN enrollments e ON e.student_id=u.id WHERE e.class_id=$CLASS_XII1 AND u.status='active' AND u.last_login_at IS NULL")
 r=$(post $A /admin/nxenesit/fletet "/admin/nxenesit?klasa=$CLASS_XII1" --data-urlencode class_id=$CLASS_XII1)
 code $A "$(echo "$r" | awk '{print $2}')" >/dev/null
-check "slips only for XII/1 students not yet signed in"    "$CW" "$(slips_in "$T/body")"
-contains "…titled with the class"                           "$T/body" "Fletët e hyrjes · Klasa XII/1"
+check "slips only for XII-1 students not yet signed in"    "$CW" "$(slips_in "$T/body")"
+contains "…titled with the class"                           "$T/body" "Fletët e hyrjes · Klasa XII-1"
 
 echo; echo "== Activation and safeguards =="
 check "deactivate a student"                                "302 /admin/perdoruesit/$NEW/ndrysho" "$(post $A /admin/perdoruesit/$NEW/statusi /admin/perdoruesit/$NEW/ndrysho --data-urlencode status=inactive)"

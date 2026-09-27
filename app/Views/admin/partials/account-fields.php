@@ -6,6 +6,7 @@
  * @var array                 $values   AccountForm values
  * @var array<string, string> $errors
  * @var array                 $classes  grouped class options (students only)
+ * @var array                 $subjects subject options (teachers only)
  * @var bool                  $creating
  */
 
@@ -81,6 +82,32 @@ use App\Services\AccountForm;
 <?php endif; ?>
 
 <?php if ($role === 'teacher'): ?>
+    <fieldset class="form-section">
+        <legend class="form-section__title">Mësimi</legend>
+        <div class="form-grid form-grid--2">
+            <div class="field">
+                <label class="field__label" for="timetable_number">Numri në orar</label>
+                <input class="input input--short" id="timetable_number" name="timetable_number" value="<?= e($values['timetable_number']) ?>" inputmode="numeric" maxlength="3" autocomplete="off"
+                       <?= field_invalid($errors, 'timetable_number', 'timetable_number-hint') ?: ' aria-describedby="timetable_number-hint"' ?>>
+                <p class="field__hint" id="timetable_number-hint">Numri me të cilin mësimdhënësi shënohet në orarin e shtypur të shkollës, p.sh. 25. Opsional.</p>
+                <?= field_error($errors, 'timetable_number') ?>
+            </div>
+        </div>
+        <fieldset class="field">
+            <legend class="field__label">Lëndët që jep</legend>
+            <p class="field__hint" id="subject_ids-hint">Kur i caktohet lënda një klase, këta mësimdhënës ofrohen të parët.</p>
+            <div class="check-grid">
+                <?php foreach ($subjects as $subject): ?>
+                    <label class="check">
+                        <input type="checkbox" name="subject_ids[]" value="<?= e($subject['id']) ?>"<?= in_array((int) $subject['id'], $values['subject_ids'], true) ? ' checked' : '' ?>>
+                        <?= e($subject['name']) ?><?= (int) $subject['is_active'] === 0 ? ' <span class="meta">(joaktive)</span>' : '' ?>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+            <?= field_error($errors, 'subject_ids') ?>
+        </fieldset>
+    </fieldset>
+
     <fieldset class="form-section">
         <legend class="form-section__title">Faqja e shkollës</legend>
         <div class="form-grid form-grid--2">

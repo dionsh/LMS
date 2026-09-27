@@ -5,10 +5,11 @@ Run them from the project folder (Git Bash on Windows). They use the **local dev
 | Command | What it proves |
 |---|---|
 | `php tests/router_test.php` | URL matching, `{id:\d+}` parameters, route groups, 404/405, trailing-slash redirects, automatic CSRF on POST, `route()` URLs |
-| `bash tests/database_test.sh` | the schema's foreign keys, unique keys and CHECK constraints reject bad data (15 cases) and accept valid data. It uses a throwaway database |
+| `bash tests/database_test.sh` | the schema's foreign keys, unique keys and CHECK constraints reject bad data (21 cases: marks, enrollments, timetable slots, grades that do not exist, curriculum hours, duplicate timetable numbers…) and accept valid data. It uses a throwaway database |
 | `bash tests/auth_test.sh` | signing in and out, role isolation, throttling, deactivation, temporary passwords, profile — 71 checks over real HTTP with the test accounts |
 | `bash tests/users_test.sh` | user management — lists, search, filters and pages; adding and editing students, teachers and admins; login slips (single, per class, all teachers) and signing in with them; activation and safeguards (61 checks, restores the demo data afterwards) |
-| `bash tests/school_data_test.sh` | the school structure: 45 classes each with a homeroom teacher, 80 staff records that cannot sign in, the real XII/1–5 homeroom teachers, 10 enrolled students, the admin lists and the student's class on the dashboard (26 checks, loader run twice to prove it is re-runnable) |
+| `bash tests/school_data_test.sh` | the school structure: 37 classes (XI-1…7 and XII-1…15 in the morning as on the official timetable, X in the afternoon), each with a homeroom teacher and its grade's subjects, the 22 real homeroom teachers, 80 staff records that cannot sign in, a teacher for every subject, 10 enrolled students, the admin lists and the student's class on the dashboard (39 checks, loader run twice to prove it is re-runnable) |
+| `bash tests/structure_test.sh` | the academic structure: curriculum per grade (adding/removing a subject reaches every class of the grade, subjects in use stay), subjects, adding/editing/deleting classes and the rules behind them (unique sections, one homeroom class per teacher, one class per room and shift), who teaches what, rooms, teachers' subjects and timetable numbers, school years and the current year, the activity log (103 checks, restores the demo data afterwards) |
 
 Every command exits with status 0 only when all checks pass.
 

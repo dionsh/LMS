@@ -8,6 +8,8 @@ use App\Core\Auth;
 use App\Core\HttpException;
 use App\Core\Response;
 use App\Core\Session;
+use App\Models\ClassSubject;
+use App\Models\Subject;
 use App\Models\User;
 use App\Services\AccountForm;
 use App\Services\Accounts;
@@ -131,14 +133,18 @@ final class UserController extends AccountController
 
     private function editForm(array $user, array $values, array $errors = [], int $status = 200): Response
     {
+        $isTeacher = $user['role'] === 'teacher';
+
         return $this->page('admin/account-edit', [
-            'title'   => $user['first_name'] . ' ' . $user['last_name'],
-            'account' => $user,
-            'values'  => $values,
-            'errors'  => $errors,
-            'classes' => $user['role'] === 'student' ? $this->classOptions() : [],
-            'back'    => self::LIST_PATH[$user['role']],
-            'isSelf'  => (int) $user['id'] === Auth::id(),
+            'title'    => $user['first_name'] . ' ' . $user['last_name'],
+            'account'  => $user,
+            'values'   => $values,
+            'errors'   => $errors,
+            'classes'  => $user['role'] === 'student' ? $this->classOptions() : [],
+            'subjects' => $isTeacher ? Subject::options() : [],
+            'teaching' => $isTeacher ? ClassSubject::forTeacher((int) $user['id'], $this->yearId()) : [],
+            'back'     => self::LIST_PATH[$user['role']],
+            'isSelf'   => (int) $user['id'] === Auth::id(),
         ], self::NAV[$user['role']], $status);
     }
 }

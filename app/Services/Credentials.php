@@ -50,7 +50,7 @@ final class Credentials
         });
     }
 
-    /** "Klasa XII/1", "Mësimdhënës", "Administrator" — the line under the name on the slip. */
+    /** "Klasa XII-1", "Mësimdhënës", "Administrator" — the line under the name on the slip. */
     private static function detail(array $person): string
     {
         $grade = $person['class_grade'] ?? null;

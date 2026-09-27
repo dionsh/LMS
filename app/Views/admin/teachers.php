@@ -71,6 +71,7 @@ use App\Support\Format;
             <thead>
                 <tr>
                     <th scope="col">Mësimdhënësi</th>
+                    <th scope="col">Lëndët</th>
                     <th scope="col">Kujdestar i klasës</th>
                     <th scope="col">Llogaria</th>
                     <th scope="col"><span class="visually-hidden">Veprime</span></th>
@@ -81,8 +82,9 @@ use App\Support\Format;
                     <tr>
                         <td data-label="Mësimdhënësi">
                             <a class="table__primary table__link" href="<?= e(url('/admin/perdoruesit/' . $teacher['id'] . '/ndrysho')) ?>"><?= e(Format::personName($teacher['title'], $teacher['first_name'], $teacher['last_name'])) ?></a>
-                            <span class="table__secondary"><?= e($teacher['username']) ?></span>
+                            <span class="table__secondary"><?= e($teacher['username']) ?><?= $teacher['timetable_number'] !== null ? ' · Nr. ' . e($teacher['timetable_number']) : '' ?></span>
                         </td>
+                        <td data-label="Lëndët"><?= $teacher['subjects'] !== null ? e($teacher['subjects']) : '<span class="meta">—</span>' ?></td>
                         <td data-label="Kujdestar i klasës">
                             <?= $teacher['homeroom_class_id'] !== null
                                 ? '<span class="badge badge--ink badge--plain">' . e(Format::classLabel((int) $teacher['homeroom_grade'], (int) $teacher['homeroom_section'])) . '</span>'

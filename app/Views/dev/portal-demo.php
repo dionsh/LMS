@@ -31,7 +31,7 @@ $roles = ['nxenes' => 'Nxënës', 'mesimdhenes' => 'Mësimdhënës', 'admin' => 
     <div>
         <p class="kicker">E premte, 2 tetor 2026</p>
         <h1 class="page-header__title">Mirëmëngjes, <?= e($user['first_name']) ?>.</h1>
-        <p class="lead">Klasa XI/5 · Kujdestari: Prof. Drita Berisha</p>
+        <p class="lead">Klasa XI-5 · Kujdestari: Prof. Drita Berisha</p>
     </div>
     <a class="btn btn--secondary" href="#orari-javor"><?= icon('calendar') ?>Orari javor</a>
 </header>
@@ -119,7 +119,7 @@ $roles = ['nxenes' => 'Nxënës', 'mesimdhenes' => 'Mësimdhënës', 'admin' => 
 </div>
 
 <section class="portal-section" id="orari-javor" aria-labelledby="week-title">
-    <header class="section-head"><h2 class="section-head__title" id="week-title">Orari javor</h2><span class="meta">Klasa XI/5 · paradite</span></header>
+    <header class="section-head"><h2 class="section-head__title" id="week-title">Orari javor</h2><span class="meta">Klasa XI-5 · paradite</span></header>
 
     <div class="schedule-days">
         <div class="tabs" role="tablist" aria-label="Ditët e javës">
@@ -138,6 +138,6 @@ $roles = ['nxenes' => 'Nxënës', 'mesimdhenes' => 'Mësimdhënës', 'admin' => 
     </div>
 
     <div class="schedule-week">
-        <?= partial('partials/timetable-week', ['periods' => $periods, 'week' => $week, 'today' => $day, 'current' => $period, 'caption' => 'Orari javor i klasës XI/5']) ?>
+        <?= partial('partials/timetable-week', ['periods' => $periods, 'week' => $week, 'today' => $day, 'current' => $period, 'caption' => 'Orari javor i klasës XI-5']) ?>
     </div>
 </section>

@@ -5,7 +5,7 @@
  * @var array      $users        active accounts per role
  * @var int        $classes
  * @var int        $neverSigned
- * @var list<array{0: string, 1: string, 2: bool}> $setup
+ * @var list<array{0: string, 1: string, 2: bool, 3: ?string}> $setup  label, detail, done, page
  */
 
 use App\Support\Format;
@@ -38,11 +38,15 @@ $done = count(array_filter($setup, static fn (array $step): bool => $step[2]));
     </header>
     <progress class="progress" value="<?= e($done) ?>" max="<?= e(count($setup)) ?>"><?= e($done) ?> nga <?= e(count($setup)) ?></progress>
     <ul class="item-list setup-list" role="list">
-        <?php foreach ($setup as [$label, $detail, $complete]): ?>
+        <?php foreach ($setup as [$label, $detail, $complete, $path]): ?>
             <li>
                 <div class="cluster">
                     <span class="setup-list__icon<?= $complete ? ' is-done' : '' ?>"><?= icon($complete ? 'check-circle' : 'clock') ?></span>
-                    <span class="item__title"><?= e($label) ?></span>
+                    <?php if ($path !== null): ?>
+                        <a class="item__title" href="<?= e(url($path)) ?>"><?= e($label) ?></a>
+                    <?php else: ?>
+                        <span class="item__title"><?= e($label) ?></span>
+                    <?php endif; ?>
                 </div>
                 <span class="badge badge--<?= $complete ? 'success' : 'plain' ?>"><?= e($detail) ?></span>
             </li>

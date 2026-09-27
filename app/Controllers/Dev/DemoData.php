@@ -97,10 +97,10 @@ final class DemoData
     public static function students(): array
     {
         return [
-            ['name' => 'Arta Gashi', 'username' => 'arta.gashi', 'class' => 'XI/5', 'status' => 'active', 'login' => '2026-10-02 07:41'],
-            ['name' => 'Blend Hoxha', 'username' => 'blend.hoxha', 'class' => 'XI/5', 'status' => 'active', 'login' => '2026-10-01 18:12'],
-            ['name' => 'Dea Morina', 'username' => 'dea.morina', 'class' => 'X/13', 'status' => 'active', 'login' => null],
-            ['name' => 'Endrit Shala', 'username' => 'endrit.shala', 'class' => 'XII/1', 'status' => 'inactive', 'login' => '2026-06-20 10:03'],
+            ['name' => 'Arta Gashi', 'username' => 'arta.gashi', 'class' => 'XI-5', 'status' => 'active', 'login' => '2026-10-02 07:41'],
+            ['name' => 'Blend Hoxha', 'username' => 'blend.hoxha', 'class' => 'XI-5', 'status' => 'active', 'login' => '2026-10-01 18:12'],
+            ['name' => 'Dea Morina', 'username' => 'dea.morina', 'class' => 'X-13', 'status' => 'active', 'login' => null],
+            ['name' => 'Endrit Shala', 'username' => 'endrit.shala', 'class' => 'XII-1', 'status' => 'inactive', 'login' => '2026-06-20 10:03'],
         ];
     }
 

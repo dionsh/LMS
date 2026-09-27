@@ -9,6 +9,7 @@ use App\Models\ActivityLog;
 use App\Models\Enrollment;
 use App\Models\StudentProfile;
 use App\Models\TeacherProfile;
+use App\Models\TeacherSubject;
 use App\Models\User;
 
 /**
@@ -114,7 +115,9 @@ final class Accounts
                 $values['show_on_website'],
                 $values['specialization'] !== '' ? $values['specialization'] : null,
                 $values['bio'] !== '' ? $values['bio'] : null,
+                AccountForm::timetableNumber($values),
             );
+            TeacherSubject::save($id, $values['subject_ids']);
         }
     }
 }

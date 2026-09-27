@@ -223,7 +223,7 @@ $today = 5; // the demo is set on a Friday
                 <div class="field">
                     <label class="field__label" for="sg-class">Klasa</label>
                     <select class="select" id="sg-class" name="class">
-                        <option>X/13</option><option selected>XI/5</option><option>XII/1</option>
+                        <option>X-13</option><option selected>XI-5</option><option>XII-1</option>
                     </select>
                 </div>
                 <div class="field">
@@ -276,7 +276,7 @@ $today = 5; // the demo is set on a Friday
             <span class="badge badge--danger">Afati ka kaluar</span>
             <span class="badge badge--success">Aktiv</span>
             <span class="badge">Joaktiv</span>
-            <span class="badge badge--ink badge--plain">XI/5</span>
+            <span class="badge badge--ink badge--plain">XI-5</span>
         </div>
         <div class="sg-grades">
             <?php foreach (Labels::GRADES as $value => $word): ?>
@@ -352,7 +352,7 @@ $today = 5; // the demo is set on a Friday
 <section class="section section--band" id="tabelat">
     <div class="container stack--lg">
         <header class="section-head"><h2 class="section-head__title">Tabelat</h2><span class="meta">Në telefon rreshtat bëhen blloqe</span></header>
-        <nav class="breadcrumbs" aria-label="Gjurma"><ol><li><a href="#tabelat">Paneli</a></li><li><a href="#tabelat">Nxënësit</a></li><li aria-current="page">XI/5</li></ol></nav>
+        <nav class="breadcrumbs" aria-label="Gjurma"><ol><li><a href="#tabelat">Paneli</a></li><li><a href="#tabelat">Nxënësit</a></li><li aria-current="page">XI-5</li></ol></nav>
         <div class="table-wrap">
             <table class="table table--stack">
                 <thead><tr><th scope="col">Nxënësi</th><th scope="col">Klasa</th><th scope="col">Gjendja</th><th scope="col">Hyrja e fundit</th><th scope="col"><span class="visually-hidden">Veprime</span></th></tr></thead>
@@ -405,7 +405,7 @@ $today = 5; // the demo is set on a Friday
         </div>
 
         <div class="schedule-week">
-            <?= partial('partials/timetable-week', ['periods' => $periods, 'week' => $week, 'today' => $today, 'current' => 3, 'caption' => 'Orari javor i klasës XI/5']) ?>
+            <?= partial('partials/timetable-week', ['periods' => $periods, 'week' => $week, 'today' => $today, 'current' => 3, 'caption' => 'Orari javor i klasës XI-5']) ?>
         </div>
 
         <div class="grid grid--2">

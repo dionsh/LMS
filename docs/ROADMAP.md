@@ -87,16 +87,32 @@ Legend: ✅ done · 🟡 partly done · 🔜 next · ⬜ planned
     - slips print cleanly on A4;
     - a student added through the form can sign in with their slip and is forced to change the password;
     - all 80 teachers can be given slips in one step.
-- 🔜 **T06 · Academic structure**
+- ✅ **T06 · Academic structure** — **done 27 Sep 2026**: `tests/structure_test.sh` passes 103/103, and `tests/database_test.sh` rejects 21/21.
+  - Verified:
+    - a class added through the form gets its grade's subjects;
+    - every subject can be given a teacher, and the subject's own teachers are offered first;
+    - a subject added to a grade's curriculum reaches all its classes; one taken out leaves them unless it is in use;
+    - the rules hold: one section number per grade and year, one homeroom class per teacher, one class per room and shift;
+    - subjects and rooms that are in use cannot be deleted, only deactivated;
+    - a new school year can be made current and back;
+    - every change is in the activity log.
   - Deliverables:
-    - years & terms (set current); subjects; rooms
-    - classes (grade, section, stream, shift, homeroom teacher)
-    - enrol and move students; assign subject → teacher per class
+    - grades as data (`grade_levels`) and the curriculum per grade (*Plani mësimor*: subjects and weekly hours)
+    - the school's 16 subjects (seed); years & terms (set current); rooms
+    - classes (grade, section, stream, shift, homeroom teacher, own room), labelled **XII-1** as on the official timetable
+    - students are enrolled and moved from their account page; subject → teacher per class, with weekly hours
+    - teachers' subjects and their number on the printed timetable
+  - Done when:
+    - a class added through the form has its subjects and can be given a teacher for each;
+    - a curriculum change reaches every class of the grade.
 - 🟡 **T07 · Demo school data** — **part done 27 Sep 2026** (brought forward at the school's request):
-  - `database/demo/school.php` loads 45 classes, 80 teachers (records without credentials; the real XII/1–5 homeroom teachers plus placeholders) and 10 student accounts in X/13, XI/5 and XII/1.
-  - Read-only admin lists: *Klasat*, *Mësimdhënësit*, *Nxënësit*. Students see their class and homeroom teacher on their dashboard.
-  - `tests/school_data_test.sh` passes 26/26.
-  - Still to come with T06/T08: subjects per class, the timetable, sample work.
+  - `database/demo/school.php` loads:
+    - 37 classes: XI-1…7 and XII-1…15 in the morning with their **real homeroom teachers** from the official timetable, and X-1…15 in the afternoon;
+    - 80 teachers (records without credentials): the 22 real homeroom teachers plus 58 placeholders who teach every subject;
+    - demo weekly hours (30 a week, as on the timetable);
+    - 10 student accounts in X-13, XI-5 and XII-1.
+  - `tests/school_data_test.sh` passes 39/39.
+  - Still to come: the timetable (T08), sample work.
   - Deliverable: `database/demo/` with a realistic test school (a few classes, ~8 teachers, ~60 students, timetable, sample work) so every later task can be tested properly. Test logins are recorded there, not in chat.
 - ⬜ **T08 · Timetable & bell schedule**
   - Deliverables:

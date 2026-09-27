@@ -261,7 +261,38 @@
 
 @media (min-width: 48rem) {
     .form-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .form-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+/* A group of related fields (radio buttons, checkboxes) laid out like one field */
+fieldset.field {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+fieldset.field > legend { padding: 0; margin-bottom: var(--space-2); }
+
+/* Checkbox lists (e.g. the subjects a teacher teaches): columns that fit the width */
+.check-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+    column-gap: var(--space-5);
+}
+
+.check-grid .check { min-height: 2.5rem; padding-top: .45rem; }
+
+/* A one-line form: fields side by side with the button at the end (wraps on phones) */
+.inline-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-3) var(--space-4);
+}
+
+.inline-form .field { flex: 1 1 14rem; }
+.inline-form .field:has(.input--short) { flex: 0 1 8rem; }
 
 .field {
     display: grid;
@@ -367,6 +398,19 @@
     background-size: 1rem;
     appearance: none;
 }
+
+/* Narrow inputs for short numbers (class section, teacher number, weekly hours) */
+.input--short { max-width: 8rem; }
+
+.input--hours {
+    width: 4.5rem;
+    min-height: 2.5rem;
+    padding: .45rem .6rem;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+.input--hours::placeholder { color: var(--ink-3); }
 
 /* Input with a button inside (e.g. show/hide password) */
 .input-group {

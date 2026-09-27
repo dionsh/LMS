@@ -3,7 +3,8 @@
  * Edit any account; issue a login slip; activate or deactivate.
  *
  * @var array $account  User::details()
- * @var array $values @var array $errors @var array $classes @var string $back @var bool $isSelf
+ * @var array $values @var array $errors @var array $classes @var array $subjects @var string $back @var bool $isSelf
+ * @var list<array> $teaching  a teacher's class-subjects this year (ClassSubject::forTeacher())
  */
 
 use App\Support\Format;
@@ -42,7 +43,7 @@ $active = $account['status'] === 'active';
                 <p class="alert__body">Formulari ka <?= e(count($errors)) ?> <?= count($errors) === 1 ? 'gabim' : 'gabime' ?>. Shikoni fushat e shënuara më poshtë.</p>
             </div>
         <?php endif; ?>
-        <?= partial('admin/partials/account-fields', ['role' => $role, 'values' => $values, 'errors' => $errors, 'classes' => $classes, 'creating' => false]) ?>
+        <?= partial('admin/partials/account-fields', ['role' => $role, 'values' => $values, 'errors' => $errors, 'classes' => $classes, 'subjects' => $subjects, 'creating' => false]) ?>
         <div class="form-actions">
             <button class="btn btn--primary" type="submit">Ruaj ndryshimet</button>
             <a class="btn btn--quiet" href="<?= e(url($back)) ?>">Kthehu te lista</a>
@@ -65,6 +66,30 @@ $active = $account['status'] === 'active';
                 <?php endif; ?>
             </dl>
         </section>
+
+        <?php if ($role === 'teacher'): ?>
+            <?php $weekly = array_sum(array_map(static fn (array $t): int => (int) $t['hours'], $teaching)); ?>
+            <section class="card" aria-labelledby="teaching-title">
+                <header class="card__head">
+                    <h2 class="card__title" id="teaching-title">Mësimi këtë vit</h2>
+                    <?php if ($teaching !== []): ?><span class="meta num"><?= e($weekly) ?> orë në javë</span><?php endif; ?>
+                </header>
+                <?php if ($teaching === []): ?>
+                    <p class="meta">Ende nuk i është caktuar asnjë lëndë në ndonjë klasë. Lëndët u caktohen mësimdhënësve te faqja e secilës klasë.</p>
+                <?php else: ?>
+                    <ul class="item-list" role="list">
+                        <?php foreach ($teaching as $item): ?>
+                            <li>
+                                <div>
+                                    <a class="item__title" href="<?= e(url('/admin/klasat/' . $item['class_id'])) ?>"><?= e(Format::classLabel((int) $item['grade_level'], (int) $item['section'])) ?> · <?= e($item['subject_name']) ?></a>
+                                    <span class="item__meta"><?= $item['hours'] !== null ? e($item['hours']) . ' orë në javë' : 'Orët pa caktuar' ?> · <?= e(Labels::shift((int) $item['shift'], true)) ?></span>
+                                </div>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </section>
+        <?php endif; ?>
 
         <?php if (!$isSelf): ?>
             <section class="card" aria-labelledby="access-title">

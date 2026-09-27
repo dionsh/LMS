@@ -64,10 +64,11 @@ final class Navigation
                 ]),
                 self::section('Shkolla', [
                     self::item('classes', 'Klasat', '/admin/klasat', 'layers'),
-                    self::item('subjects', 'Lëndët', '/admin/lendet', 'book'),
                     self::item('schedule', 'Orari', '/admin/orari', 'calendar'),
-                    self::item('years', 'Vitet shkollore', '/admin/vitet-shkollore', 'clock'),
+                    self::item('curriculum', 'Plani mësimor', '/admin/plani-mesimor', 'grid'),
+                    self::item('subjects', 'Lëndët', '/admin/lendet', 'book'),
                     self::item('rooms', 'Sallat', '/admin/sallat', 'door'),
+                    self::item('years', 'Vitet shkollore', '/admin/vitet-shkollore', 'clock'),
                 ]),
                 self::section('Mësimi', [
                     self::item('assignments', 'Detyrat', '/admin/detyrat', 'clipboard'),

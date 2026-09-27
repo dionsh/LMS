@@ -71,14 +71,17 @@ CREATE TABLE users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE teacher_profiles (
-  user_id          INT UNSIGNED NOT NULL,
-  title            VARCHAR(30)  NULL,                   -- "Prof.", "Dr."
-  specialization   VARCHAR(120) NULL,                   -- shown on the public staff page
-  bio              TEXT         NULL,
-  show_on_website  TINYINT(1)   NOT NULL DEFAULT 1,
+  user_id          INT UNSIGNED      NOT NULL,
+  title            VARCHAR(30)       NULL,              -- "Prof.", "Dr."
+  specialization   VARCHAR(120)      NULL,              -- shown on the public staff page
+  bio              TEXT              NULL,
+  show_on_website  TINYINT(1)        NOT NULL DEFAULT 1,
+  timetable_number SMALLINT UNSIGNED NULL,              -- the teacher's number on the school's printed timetable (cells show "25", not a name)
   PRIMARY KEY (user_id),
+  UNIQUE KEY uq_teacher_profiles_timetable_number (timetable_number),
   CONSTRAINT fk_teacher_profiles_user FOREIGN KEY (user_id)
-    REFERENCES users (id) ON DELETE CASCADE
+    REFERENCES users (id) ON DELETE CASCADE,
+  CONSTRAINT chk_teacher_profiles_timetable_number CHECK (timetable_number IS NULL OR timetable_number BETWEEN 1 AND 999)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE student_profiles (
@@ -126,8 +129,24 @@ CREATE TABLE terms (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------
--- 4. School structure: subjects, rooms, bell schedule, classes
+-- 4. School structure: grades, subjects, rooms, bell schedule, classes
+--
+--    grade → curriculum (grade_subjects) → classes → class_subjects
+--    (subject + teacher) → schedule_entries (day × period). Students
+--    stay in their class's room; teachers come to them.
 -- ---------------------------------------------------------------------
+
+-- Grade levels the school teaches (X, XI, XII). The Roman numeral is
+-- derived from `level`, never stored. `shift` is the default for new
+-- classes of the grade; each class keeps its own shift.
+CREATE TABLE grade_levels (
+  level      TINYINT UNSIGNED NOT NULL,                 -- 10 = klasa X
+  shift      TINYINT UNSIGNED NOT NULL DEFAULT 1,       -- 1 = paradite, 2 = pasdite
+  created_at DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (level),
+  CONSTRAINT chk_grade_levels_level CHECK (level BETWEEN 1 AND 13),
+  CONSTRAINT chk_grade_levels_shift CHECK (shift IN (1, 2))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE subjects (
   id              INT UNSIGNED      NOT NULL AUTO_INCREMENT,
@@ -141,6 +160,34 @@ CREATE TABLE subjects (
   updated_at      DATETIME          NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_subjects_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- The curriculum (plani mësimor): which subjects a grade studies and how
+-- many lessons a week. A new class gets these subjects automatically.
+CREATE TABLE grade_subjects (
+  grade_level  TINYINT UNSIGNED NOT NULL,
+  subject_id   INT UNSIGNED     NOT NULL,
+  weekly_hours TINYINT UNSIGNED NULL,                   -- NULL = not decided yet
+  PRIMARY KEY (grade_level, subject_id),
+  KEY idx_grade_subjects_subject (subject_id),
+  CONSTRAINT fk_grade_subjects_grade FOREIGN KEY (grade_level)
+    REFERENCES grade_levels (level) ON DELETE CASCADE,
+  CONSTRAINT fk_grade_subjects_subject FOREIGN KEY (subject_id)
+    REFERENCES subjects (id) ON DELETE CASCADE,
+  CONSTRAINT chk_grade_subjects_hours CHECK (weekly_hours IS NULL OR weekly_hours BETWEEN 1 AND 12)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Which subjects a teacher teaches. Offered first when a subject is
+-- assigned in a class; it does not restrict the choice.
+CREATE TABLE teacher_subjects (
+  teacher_id INT UNSIGNED NOT NULL,
+  subject_id INT UNSIGNED NOT NULL,
+  PRIMARY KEY (teacher_id, subject_id),
+  KEY idx_teacher_subjects_subject (subject_id),
+  CONSTRAINT fk_teacher_subjects_teacher FOREIGN KEY (teacher_id)
+    REFERENCES users (id) ON DELETE CASCADE,
+  CONSTRAINT fk_teacher_subjects_subject FOREIGN KEY (subject_id)
+    REFERENCES subjects (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE rooms (
@@ -167,33 +214,36 @@ CREATE TABLE lesson_periods (
   CONSTRAINT chk_lesson_periods_times  CHECK (ends_at > starts_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- A class ("paralele") for one academic year. The school has three grades
--- (X, XI, XII) with ~15 classes each; labels are written X/13, XI/5, XII/1.
--- The label is derived, never stored: roman(grade_level) + "/" + section.
--- section is numeric so that X/2 sorts before X/13.
+-- A class ("paralelja") for one academic year, e.g. XII-1 — written as
+-- on the school's official timetable. The label is derived, never
+-- stored: roman(grade_level) + "-" + section. section is numeric so
+-- that XII-2 sorts before XII-13. Students stay in the class's own room
+-- (home_room_id); teachers come to them.
 CREATE TABLE classes (
   id                  INT UNSIGNED     NOT NULL AUTO_INCREMENT,
   academic_year_id    INT UNSIGNED     NOT NULL,
-  grade_level         TINYINT UNSIGNED NOT NULL,        -- 10, 11, 12
+  grade_level         TINYINT UNSIGNED NOT NULL,        -- grade_levels.level: 10, 11, 12
   section             TINYINT UNSIGNED NOT NULL,        -- 1 … 15
   stream              VARCHAR(80)      NULL,            -- drejtimi: "Shkenca natyrore"
   shift               TINYINT UNSIGNED NOT NULL DEFAULT 1,
   homeroom_teacher_id INT UNSIGNED     NULL,            -- kujdestari i klasës (every class has one; NULL only until assigned)
-  home_room_id        INT UNSIGNED     NULL,
+  home_room_id        INT UNSIGNED     NULL,            -- the class's own room, where its lessons are held
   created_at          DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at          DATETIME         NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_classes_year_grade_section (academic_year_id, grade_level, section),
   UNIQUE KEY uq_classes_id_year (id, academic_year_id),           -- target of enrollments composite FK
+  KEY idx_classes_grade (grade_level),
   KEY idx_classes_homeroom (homeroom_teacher_id),
   KEY idx_classes_home_room (home_room_id),
   CONSTRAINT fk_classes_year FOREIGN KEY (academic_year_id)
     REFERENCES academic_years (id) ON DELETE RESTRICT,
+  CONSTRAINT fk_classes_grade FOREIGN KEY (grade_level)
+    REFERENCES grade_levels (level) ON DELETE RESTRICT,
   CONSTRAINT fk_classes_homeroom FOREIGN KEY (homeroom_teacher_id)
     REFERENCES users (id) ON DELETE SET NULL,
   CONSTRAINT fk_classes_home_room FOREIGN KEY (home_room_id)
     REFERENCES rooms (id) ON DELETE SET NULL,
-  CONSTRAINT chk_classes_grade_level CHECK (grade_level BETWEEN 10 AND 12),
   CONSTRAINT chk_classes_section CHECK (section BETWEEN 1 AND 30),
   CONSTRAINT chk_classes_shift CHECK (shift IN (1, 2))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -219,12 +269,14 @@ CREATE TABLE enrollments (
 -- The central "teaching assignment": subject S is taught in class C by
 -- teacher T. Assignments, assessments, grades and timetable slots all
 -- hang off this row, so changing the teacher mid-year keeps history.
+-- A class gets one row per subject of its grade's curriculum when it is
+-- created; subjects outside the curriculum can be added by hand.
 CREATE TABLE class_subjects (
   id           INT UNSIGNED     NOT NULL AUTO_INCREMENT,
   class_id     INT UNSIGNED     NOT NULL,
   subject_id   INT UNSIGNED     NOT NULL,
   teacher_id   INT UNSIGNED     NULL,                   -- NULL = not yet assigned
-  weekly_hours TINYINT UNSIGNED NULL,                   -- planned lessons per week (timetable check)
+  weekly_hours TINYINT UNSIGNED NULL,                   -- lessons per week for THIS class; NULL = as in the curriculum (grade_subjects)
   created_at   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at   DATETIME         NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -237,7 +289,8 @@ CREATE TABLE class_subjects (
   CONSTRAINT fk_class_subjects_subject FOREIGN KEY (subject_id)
     REFERENCES subjects (id) ON DELETE RESTRICT,
   CONSTRAINT fk_class_subjects_teacher FOREIGN KEY (teacher_id)
-    REFERENCES users (id) ON DELETE SET NULL
+    REFERENCES users (id) ON DELETE SET NULL,
+  CONSTRAINT chk_class_subjects_hours CHECK (weekly_hours IS NULL OR weekly_hours BETWEEN 1 AND 12)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Weekly timetable. One lesson per class per (day, period).

@@ -8,6 +8,9 @@ use App\Core\Request;
 use App\Core\Validator;
 use App\Models\SchoolClass;
 use App\Models\StudentProfile;
+use App\Models\Subject;
+use App\Models\TeacherProfile;
+use App\Models\TeacherSubject;
 use App\Models\User;
 
 /**
@@ -29,11 +32,13 @@ final class AccountForm
             'student_number'  => $request->string('student_number'),
             'date_of_birth'   => $request->string('date_of_birth'),
             'gender'          => $request->string('gender'),
-            'title'           => $request->string('title'),
-            'specialization'  => $request->string('specialization'),
-            'bio'             => $request->string('bio'),
-            'show_on_website' => $request->input('show_on_website') === '1',
-            'issue_slip'      => $request->input('issue_slip') === '1',
+            'title'            => $request->string('title'),
+            'specialization'   => $request->string('specialization'),
+            'bio'              => $request->string('bio'),
+            'show_on_website'  => $request->input('show_on_website') === '1',
+            'timetable_number' => $request->string('timetable_number'),
+            'subject_ids'      => $request->ids('subject_ids'),
+            'issue_slip'       => $request->input('issue_slip') === '1',
         ];
     }
 
@@ -43,7 +48,8 @@ final class AccountForm
         return [
             'first_name' => '', 'last_name' => '', 'email' => '', 'phone' => '', 'class_id' => '',
             'student_number' => '', 'date_of_birth' => '', 'gender' => '', 'title' => 'Prof.',
-            'specialization' => '', 'bio' => '', 'show_on_website' => true, 'issue_slip' => true,
+            'specialization' => '', 'bio' => '', 'show_on_website' => true,
+            'timetable_number' => '', 'subject_ids' => [], 'issue_slip' => true,
         ];
     }
 
@@ -61,9 +67,11 @@ final class AccountForm
             'gender'          => (string) $user['gender'],
             'title'           => (string) $user['title'],
             'specialization'  => (string) $user['specialization'],
-            'bio'             => (string) $user['bio'],
-            'show_on_website' => (int) ($user['show_on_website'] ?? 0) === 1,
-            'issue_slip'      => false,
+            'bio'              => (string) $user['bio'],
+            'show_on_website'  => (int) ($user['show_on_website'] ?? 0) === 1,
+            'timetable_number' => $user['timetable_number'] !== null ? (string) $user['timetable_number'] : '',
+            'subject_ids'      => $user['role'] === 'teacher' ? TeacherSubject::forTeacher((int) $user['id']) : [],
+            'issue_slip'       => false,
         ];
     }
 
@@ -95,12 +103,24 @@ final class AccountForm
         }
 
         if ($role === 'teacher') {
+            $number = $values['timetable_number'];
+            $validNumber = $number === '' || (ctype_digit($number) && (int) $number >= 1 && (int) $number <= 999);
+
             $v->maxLength('title', 30, 'Titulli mund të ketë deri në 30 karaktere.')
               ->maxLength('specialization', 120, 'Fusha mund të ketë deri në 120 karaktere.')
-              ->maxLength('bio', 2000, 'Përshkrimi mund të ketë deri në 2000 karaktere.');
+              ->maxLength('bio', 2000, 'Përshkrimi mund të ketë deri në 2000 karaktere.')
+              ->rule('timetable_number', $validNumber, 'Shkruani një numër nga 1 deri në 999, ose lëreni bosh.')
+              ->rule('timetable_number', !$validNumber || $number === '' || !TeacherProfile::numberTaken((int) $number, $userId), 'Ky numër në orar i përket një mësimdhënësi tjetër.')
+              ->rule('subject_ids', array_diff($values['subject_ids'], Subject::ids()) === [], 'Zgjidhni lëndët nga lista.');
         }
 
         return $v->errors();
+    }
+
+    /** The timetable number as stored: null when left empty. */
+    public static function timetableNumber(array $values): ?int
+    {
+        return $values['timetable_number'] === '' ? null : (int) $values['timetable_number'];
     }
 
     private static function validBirthDate(string $date): bool

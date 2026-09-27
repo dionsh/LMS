@@ -71,10 +71,30 @@ final class Format
         };
     }
 
-    /** 12, 1 → "XII/1" — the only way a class label is written. */
+    /** 12, 1 → "XII-1" — the only way a class label is written (as on the school's official timetable). */
     public static function classLabel(int $gradeLevel, int $section): string
     {
-        return (Labels::GRADE_ROMAN[$gradeLevel] ?? (string) $gradeLevel) . '/' . $section;
+        return self::grade($gradeLevel) . '-' . $section;
+    }
+
+    /** Grade level as a Roman numeral: 10 → "X", 12 → "XII". Any grade the school adds works. */
+    public static function grade(int $level): string
+    {
+        $roman = '';
+        foreach (['X' => 10, 'IX' => 9, 'V' => 5, 'IV' => 4, 'I' => 1] as $numeral => $value) {
+            while ($level >= $value) {
+                $roman .= $numeral;
+                $level -= $value;
+            }
+        }
+
+        return $roman;
+    }
+
+    /** "08:00:00" → "08:00" (times from TIME columns). */
+    public static function time(?string $value): string
+    {
+        return $value === null ? '' : substr($value, 0, 5);
     }
 
     /** "Prof. Enver Bajrami" (title only when present). */

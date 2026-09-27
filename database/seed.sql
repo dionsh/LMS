@@ -63,6 +63,10 @@ INSERT INTO terms (academic_year_id, name, sort_order, starts_on, ends_on) VALUE
 -- Bell schedule (confirmed by the school): two shifts, six 45-minute
 -- lessons each. 5-minute breaks, except two 10-minute main breaks after
 -- the 2nd and the 4th lesson. Morning starts 08:00, afternoon 14:00.
+-- The official morning timetable (2026/2027, dated 21.09.2026) agrees:
+-- every class has six lessons a day, Monday to Friday. Its printed
+-- seventh column is empty, so no seventh period is defined; the admin
+-- can add one in the bell-schedule editor if it is ever used.
 -- ---------------------------------------------------------------------
 INSERT INTO lesson_periods (shift, number, starts_at, ends_at) VALUES
   -- Paradite
@@ -81,26 +85,57 @@ INSERT INTO lesson_periods (shift, number, starts_at, ends_at) VALUES
   (2, 6, '18:20', '19:05');
 
 -- ---------------------------------------------------------------------
--- Subjects of the Kosovo gymnasium curriculum (edit/extend in admin)
+-- Grades and their shift (confirmed by the school): X in the afternoon,
+-- XI and XII in the morning. Classes take their grade's shift by default.
+-- ---------------------------------------------------------------------
+INSERT INTO grade_levels (level, shift) VALUES
+  (10, 2),
+  (11, 1),
+  (12, 1);
+
+-- ---------------------------------------------------------------------
+-- The school's subjects (given by the school, 27 Sep 2026). short_name
+-- is for the compact whole-school timetable.
 -- ---------------------------------------------------------------------
 INSERT INTO subjects (name, short_name, sort_order) VALUES
-  ('Gjuhë shqipe dhe letërsi',  'Shqip',     1),
-  ('Gjuhë angleze',             'Anglisht',  2),
-  ('Gjuhë gjermane',            'Gjermanisht', 3),
-  ('Matematikë',                'Mat',       4),
-  ('Fizikë',                    'Fizikë',    5),
-  ('Kimi',                      'Kimi',      6),
-  ('Biologji',                  'Biologji',  7),
-  ('Informatikë',               'Info',      8),
-  ('Histori',                   'Histori',   9),
-  ('Gjeografi',                 'Gjeografi', 10),
-  ('Filozofi',                  'Filozofi',  11),
-  ('Sociologji',                'Sociologji', 12),
-  ('Psikologji',                'Psikologji', 13),
-  ('Edukatë qytetare',          'Ed. qyt.',  14),
-  ('Art figurativ',             'Art',       15),
-  ('Muzikë',                    'Muzikë',    16),
-  ('Edukatë fizike dhe sport',  'Ed. fizike', 17);
+  ('Gjuhë shqipe',            'Shqip',    1),
+  ('Gjuhë angleze',           'Angl.',    2),
+  ('Gjuhë gjermane',          'Gjerm.',   3),
+  ('Matematikë',              'Mat.',     4),
+  ('Kimi',                    'Kimi',     5),
+  ('Biologji',                'Biol.',    6),
+  ('Fizikë',                  'Fiz.',     7),
+  ('Edukatë fizike',          'Ed. fiz.', 8),
+  ('Mësim zgjedhor',          'Zgjedh.',  9),
+  ('Teknologji',              'Tekn.',    10),
+  ('Gjeografi',               'Gjeogr.',  11),
+  ('Muzikë',                  'Muz.',     12),
+  ('Art figurativ',           'Art',      13),
+  ('Histori',                 'Hist.',    14),
+  ('Filozofi dhe psikologji', 'Filoz.',   15),
+  ('Astronomi',               'Astr.',    16);
+
+-- ---------------------------------------------------------------------
+-- Curriculum: every grade studies the eleven general subjects, plus
+--   X:   Muzikë, Art figurativ, Histori
+--   XI:  Filozofi dhe psikologji
+--   XII: Astronomi
+-- Weekly hours are left empty until the school confirms its plan; the
+-- admin fills them in under "Plani mësimor".
+-- ---------------------------------------------------------------------
+INSERT INTO grade_subjects (grade_level, subject_id)
+SELECT g.level, s.id
+  FROM grade_levels g
+  JOIN subjects s ON s.sort_order BETWEEN 1 AND 11;
+
+INSERT INTO grade_subjects (grade_level, subject_id)
+SELECT 10, id FROM subjects WHERE name IN ('Muzikë', 'Art figurativ', 'Histori');
+
+INSERT INTO grade_subjects (grade_level, subject_id)
+SELECT 11, id FROM subjects WHERE name = 'Filozofi dhe psikologji';
+
+INSERT INTO grade_subjects (grade_level, subject_id)
+SELECT 12, id FROM subjects WHERE name = 'Astronomi';
 
 -- ---------------------------------------------------------------------
 -- Public news categories

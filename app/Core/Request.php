@@ -132,6 +132,45 @@ final class Request
         return $this->body;
     }
 
+    /**
+     * A POST field sent as a keyed list, e.g. teacher[12]=5&teacher[13]=: → [12 => '5', 13 => ''].
+     * Only string values with integer keys survive; each value is trimmed.
+     *
+     * @return array<int, string>
+     */
+    public function keyed(string $key): array
+    {
+        $values = $this->body[$key] ?? [];
+        $result = [];
+
+        foreach (is_array($values) ? $values : [] as $index => $value) {
+            if (is_int($index) && is_string($value)) {
+                $result[$index] = trim($value);
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Ids from checkboxes named like subject_ids[]: only positive integers, no duplicates.
+     *
+     * @return list<int>
+     */
+    public function ids(string $key): array
+    {
+        $values = $this->body[$key] ?? [];
+        $ids = [];
+
+        foreach (is_array($values) ? $values : [] as $value) {
+            if (is_string($value) && ctype_digit($value) && (int) $value > 0) {
+                $ids[(int) $value] = (int) $value;
+            }
+        }
+
+        return array_values($ids);
+    }
+
     public function file(string $key): ?array
     {
         return $this->files[$key] ?? null;

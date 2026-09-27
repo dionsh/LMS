@@ -94,7 +94,7 @@ final class User extends Model
                     u.must_change_password, u.last_login_at, u.created_at,
                     u.password_hash IS NOT NULL AS has_credentials,
                     sp.student_number, sp.date_of_birth, sp.gender,
-                    tp.title, tp.specialization, tp.bio, tp.show_on_website,
+                    tp.title, tp.specialization, tp.bio, tp.show_on_website, tp.timetable_number,
                     sc.id AS class_id, sc.grade_level AS class_grade, sc.section AS class_section,
                     hc.id AS homeroom_class_id, hc.grade_level AS homeroom_grade, hc.section AS homeroom_section
                FROM users u
@@ -127,7 +127,10 @@ final class User extends Model
         return self::fetchAll(
             'SELECT u.id, u.role, u.first_name, u.last_name, u.username, u.email, u.status, u.last_login_at,
                     u.password_hash IS NOT NULL AS has_credentials,
-                    tp.title,
+                    tp.title, tp.timetable_number,
+                    (SELECT GROUP_CONCAT(s.short_name ORDER BY s.sort_order SEPARATOR \', \')
+                       FROM teacher_subjects ts JOIN subjects s ON s.id = ts.subject_id
+                      WHERE ts.teacher_id = u.id) AS subjects,
                     sc.id AS class_id, sc.grade_level AS class_grade, sc.section AS class_section,
                     hc.id AS homeroom_class_id, hc.grade_level AS homeroom_grade, hc.section AS homeroom_section
                FROM users u
@@ -270,6 +273,34 @@ final class User extends Model
     public static function countWithoutCredentials(): int
     {
         return (int) self::fetchValue("SELECT COUNT(*) FROM users WHERE status = 'active' AND password_hash IS NULL");
+    }
+
+    /**
+     * Active teachers for <select>s, by surname, with their timetable number and
+     * the subjects they teach (subject_ids: list<int>). Inactive teachers are
+     * included only when listed in $alsoInclude (e.g. still assigned somewhere).
+     *
+     * @param list<int> $alsoInclude
+     */
+    public static function teacherOptions(array $alsoInclude = []): array
+    {
+        $extra = $alsoInclude === [] ? '' : ' OR u.id IN (' . implode(', ', array_fill(0, count($alsoInclude), '?')) . ')';
+
+        $rows = self::fetchAll(
+            "SELECT u.id, u.first_name, u.last_name, u.status, tp.title, tp.timetable_number,
+                    (SELECT GROUP_CONCAT(ts.subject_id) FROM teacher_subjects ts WHERE ts.teacher_id = u.id) AS subject_ids
+               FROM users u
+               LEFT JOIN teacher_profiles tp ON tp.user_id = u.id
+              WHERE u.role = 'teacher' AND (u.status = 'active'{$extra})
+              ORDER BY u.last_name, u.first_name",
+            array_values(array_map('intval', $alsoInclude))
+        );
+
+        foreach ($rows as &$row) {
+            $row['subject_ids'] = $row['subject_ids'] === null ? [] : array_map('intval', explode(',', (string) $row['subject_ids']));
+        }
+
+        return $rows;
     }
 
     /**

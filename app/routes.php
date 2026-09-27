@@ -16,10 +16,14 @@ declare(strict_types=1);
 use App\Controllers\Account\ProfileController;
 use App\Controllers\Admin\ClassController as AdminClasses;
 use App\Controllers\Admin\DashboardController as AdminDashboard;
+use App\Controllers\Admin\GradeController as AdminGrades;
+use App\Controllers\Admin\RoomController as AdminRooms;
 use App\Controllers\Admin\SlipController as AdminSlips;
 use App\Controllers\Admin\StudentController as AdminStudents;
+use App\Controllers\Admin\SubjectController as AdminSubjects;
 use App\Controllers\Admin\TeacherController as AdminTeachers;
 use App\Controllers\Admin\UserController as AdminUsers;
+use App\Controllers\Admin\YearController as AdminYears;
 use App\Controllers\Auth\LoginController;
 use App\Controllers\Auth\PasswordController;
 use App\Controllers\Dev\StyleGuideController;
@@ -74,7 +78,47 @@ $router->group(['prefix' => '/mesimdhenesi', 'middleware' => ['auth', 'password.
 
 $router->group(['prefix' => '/admin', 'middleware' => ['auth', 'password.changed', 'role:admin']], function (Router $r): void {
     $r->get('/', [AdminDashboard::class, 'index'], 'admin.dashboard');
+
+    // Classes: add/edit, their students, and who teaches each subject
     $r->get('/klasat', [AdminClasses::class, 'index'], 'admin.classes');
+    $r->get('/klasat/shto', [AdminClasses::class, 'create'], 'admin.classes.create');
+    $r->post('/klasat/shto', [AdminClasses::class, 'store'], 'admin.classes.store');
+    $r->get('/klasat/{id:\d+}', [AdminClasses::class, 'show'], 'admin.classes.show');
+    $r->get('/klasat/{id:\d+}/ndrysho', [AdminClasses::class, 'edit'], 'admin.classes.edit');
+    $r->post('/klasat/{id:\d+}/ndrysho', [AdminClasses::class, 'update'], 'admin.classes.update');
+    $r->post('/klasat/{id:\d+}/fshij', [AdminClasses::class, 'destroy'], 'admin.classes.destroy');
+    $r->post('/klasat/{id:\d+}/lendet', [AdminClasses::class, 'saveSubjects'], 'admin.classes.subjects');
+    $r->post('/klasat/{id:\d+}/lendet/shto', [AdminClasses::class, 'addSubject'], 'admin.classes.subjects.add');
+    $r->post('/klasat/{id:\d+}/lendet/hiq', [AdminClasses::class, 'removeSubject'], 'admin.classes.subjects.remove');
+
+    // Curriculum: grades and the subjects they study
+    $r->get('/plani-mesimor', [AdminGrades::class, 'index'], 'admin.grades');
+    $r->post('/plani-mesimor/shto', [AdminGrades::class, 'store'], 'admin.grades.store');
+    $r->get('/plani-mesimor/{level:\d+}', [AdminGrades::class, 'edit'], 'admin.grades.edit');
+    $r->post('/plani-mesimor/{level:\d+}', [AdminGrades::class, 'update'], 'admin.grades.update');
+    $r->post('/plani-mesimor/{level:\d+}/fshij', [AdminGrades::class, 'destroy'], 'admin.grades.destroy');
+
+    // Subjects
+    $r->get('/lendet', [AdminSubjects::class, 'index'], 'admin.subjects');
+    $r->get('/lendet/shto', [AdminSubjects::class, 'create'], 'admin.subjects.create');
+    $r->post('/lendet/shto', [AdminSubjects::class, 'store'], 'admin.subjects.store');
+    $r->get('/lendet/{id:\d+}/ndrysho', [AdminSubjects::class, 'edit'], 'admin.subjects.edit');
+    $r->post('/lendet/{id:\d+}/ndrysho', [AdminSubjects::class, 'update'], 'admin.subjects.update');
+    $r->post('/lendet/{id:\d+}/fshij', [AdminSubjects::class, 'destroy'], 'admin.subjects.destroy');
+
+    // Rooms
+    $r->get('/sallat', [AdminRooms::class, 'index'], 'admin.rooms');
+    $r->post('/sallat/shto', [AdminRooms::class, 'store'], 'admin.rooms.store');
+    $r->get('/sallat/{id:\d+}/ndrysho', [AdminRooms::class, 'edit'], 'admin.rooms.edit');
+    $r->post('/sallat/{id:\d+}/ndrysho', [AdminRooms::class, 'update'], 'admin.rooms.update');
+    $r->post('/sallat/{id:\d+}/fshij', [AdminRooms::class, 'destroy'], 'admin.rooms.destroy');
+
+    // School years and semesters
+    $r->get('/vitet-shkollore', [AdminYears::class, 'index'], 'admin.years');
+    $r->post('/vitet-shkollore/shto', [AdminYears::class, 'store'], 'admin.years.store');
+    $r->get('/vitet-shkollore/{id:\d+}/ndrysho', [AdminYears::class, 'edit'], 'admin.years.edit');
+    $r->post('/vitet-shkollore/{id:\d+}/ndrysho', [AdminYears::class, 'update'], 'admin.years.update');
+    $r->post('/vitet-shkollore/{id:\d+}/aktual', [AdminYears::class, 'makeCurrent'], 'admin.years.current');
 
     // Students
     $r->get('/nxenesit', [AdminStudents::class, 'index'], 'admin.students');

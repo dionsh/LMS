@@ -4,21 +4,31 @@ declare(strict_types=1);
 
 /*
  * DEVELOPMENT ONLY — fills the current school year with the school's structure
- * from database/demo/school-data.php: 45 classes, 80 teachers (records without
- * sign-in credentials, every class with a homeroom teacher) and 10 student
- * accounts enrolled in X/13, XI/5 and XII/1.
+ * from database/demo/school-data.php:
+ *   - 37 classes (X-1…X-15 afternoon; XI-1…XI-7, XII-1…XII-15 morning), each
+ *     with its grade's subjects and a homeroom teacher;
+ *   - 80 teachers (records without sign-in credentials): the 22 real homeroom
+ *     teachers of the morning shift and 58 placeholders who teach every class;
+ *   - demo weekly hours wherever the curriculum has none yet;
+ *   - 10 student accounts enrolled in X-13, XI-5 and XII-1.
  *
  *   php database/demo/school.php
  *
- * Safe to run again: existing classes and people are reused, not duplicated.
+ * Safe to run again: existing classes, people and assignments are reused, and
+ * anything changed in the admin panel is left as it is.
  */
 
 use App\Core\Database;
 use App\Models\AcademicYear;
+use App\Models\ClassSubject;
+use App\Models\Curriculum;
 use App\Models\Enrollment;
+use App\Models\GradeLevel;
 use App\Models\SchoolClass;
 use App\Models\StudentProfile;
+use App\Models\Subject;
 use App\Models\TeacherProfile;
+use App\Models\TeacherSubject;
 use App\Models\User;
 use App\Services\Usernames;
 use App\Support\Format;
@@ -38,6 +48,7 @@ if (config('app.env') !== 'development') {
 $data = require __DIR__ . '/school-data.php';
 $year = AcademicYear::current() ?? exit("Mungon viti shkollor aktual (seed.sql).\n");
 $yearId = (int) $year['id'];
+$subjectIds = array_column(Subject::options(), 'id', 'name');
 
 /**
  * The teacher's id — an existing record is reused untouched (edits made in the
@@ -61,39 +72,90 @@ $teacher = static function (string $first, string $last, bool $real): int {
     return $id;
 };
 
-Database::transaction(static function () use ($data, $yearId, $teacher): void {
-    // 1. Classes: X/1 … XII/15
-    $classes = [];
-    foreach ([10, 11, 12] as $grade) {
-        for ($section = 1; $section <= 15; $section++) {
-            $classes[$grade][$section] = SchoolClass::findOrCreate($yearId, $grade, $section, $data['shifts'][$grade]);
+Database::transaction(static function () use ($data, $yearId, $teacher, $subjectIds): void {
+    // 1. Demo weekly hours, only where the curriculum has none yet
+    foreach ($data['demo_hours'] as $grade => $hours) {
+        foreach ($hours as $subject => $count) {
+            Curriculum::setHoursIfEmpty($grade, (int) $subjectIds[$subject], $count);
         }
     }
 
-    // 2. Homeroom teachers: the five real ones, then placeholders for the other 40 classes
+    // 2. Classes in their grade's shift, each with the grade's subjects
+    $shifts = GradeLevel::shifts();
+    $classes = [];
+    foreach ($data['classes'] as $grade => $count) {
+        for ($section = 1; $section <= $count; $section++) {
+            $classes[$grade][$section] = SchoolClass::findOrCreate($yearId, $grade, $section, $shifts[$grade]);
+        }
+    }
+    ClassSubject::addFromCurriculum($yearId);
+
+    // 3. Homeroom teachers: the 22 real ones of the morning shift…
     foreach ($data['real_homerooms'] as [$first, $last, $grade, $section]) {
         SchoolClass::setHomeroomTeacher($classes[$grade][$section], $teacher($first, $last, true));
     }
 
-    $realSlots = array_map(static fn (array $h): string => $h[2] . '/' . $h[3], $data['real_homerooms']);
-    $openSlots = [];
+    // …and placeholders (with their subjects) for the classes still without one
+    $open = [];
     foreach ($classes as $grade => $sections) {
-        foreach (array_keys($sections) as $section) {
-            if (!in_array($grade . '/' . $section, $realSlots, true)) {
-                $openSlots[] = [$grade, $section];
+        foreach ($sections as $section => $classId) {
+            if (!in_array([$grade, $section], array_map(static fn (array $h): array => [$h[2], $h[3]], $data['real_homerooms']), true)) {
+                $open[] = $classId;
             }
         }
     }
 
-    foreach ($data['placeholder_teachers'] as $index => [$first, $last]) {
+    $placeholders = [];
+    foreach ($data['placeholder_teachers'] as $index => [$first, $last, $subjects]) {
         $id = $teacher($first, $last, false);
-        if (isset($openSlots[$index])) {
-            [$grade, $section] = $openSlots[$index];
-            SchoolClass::setHomeroomTeacher($classes[$grade][$section], $id);
+        if (TeacherSubject::forTeacher($id) === []) {
+            TeacherSubject::save($id, array_map(static fn (string $name): int => (int) $subjectIds[$name], $subjects));
         }
+        if (isset($open[$index])) {
+            SchoolClass::setHomeroomTeacher($open[$index], $id);
+        }
+        $placeholders[] = $id;
     }
 
-    // 3. Student accounts, enrolled in their class
+    // 4. Who teaches what. The test teacher account first (if it exists)…
+    $test = User::findForLogin($data['test_teacher']['username']);
+    $rows = ClassSubject::forYear($yearId);
+    if ($test !== null) {
+        TeacherSubject::add((int) $test['id'], (int) $subjectIds[$data['test_teacher']['subject']]);
+        foreach ($rows as &$row) {
+            if ($row['teacher_id'] === null && $row['subject_name'] === $data['test_teacher']['subject']
+                && in_array([(int) $row['grade_level'], (int) $row['section']], $data['test_teacher']['classes'], true)) {
+                ClassSubject::setTeacher((int) $row['id'], (int) $test['id']);
+                $row['teacher_id'] = (int) $test['id'];
+            }
+        }
+        unset($row);
+    }
+
+    // …then every subject still without a teacher goes to the least-loaded placeholder who teaches it
+    $load = array_fill_keys($placeholders, 0);
+    $teaches = [];
+    foreach ($placeholders as $id) {
+        foreach (TeacherSubject::forTeacher($id) as $subjectId) {
+            $teaches[$subjectId][] = $id;
+        }
+    }
+    foreach ($rows as $row) {
+        if ($row['teacher_id'] !== null && isset($load[(int) $row['teacher_id']])) {
+            $load[(int) $row['teacher_id']] += (int) $row['hours'];
+        }
+    }
+    foreach ($rows as $row) {
+        $candidates = $teaches[(int) $row['subject_id']] ?? [];
+        if ($row['teacher_id'] !== null || $candidates === []) {
+            continue;
+        }
+        usort($candidates, static fn (int $a, int $b): int => [$load[$a], $a] <=> [$load[$b], $b]);
+        ClassSubject::setTeacher((int) $row['id'], $candidates[0]);
+        $load[$candidates[0]] += (int) $row['hours'];
+    }
+
+    // 5. Student accounts, enrolled in their class
     foreach ($data['students'] as [$first, $last, $grade, $section, $born, $gender]) {
         $existing = User::findByName('student', $first, $last);
         if ($existing === null) {
@@ -118,17 +180,19 @@ Database::transaction(static function () use ($data, $yearId, $teacher): void {
 // Summary
 $overview = SchoolClass::overview($yearId);
 $teachers = User::teachersOverview($yearId);
-$withHomeroom = count(array_filter($teachers, static fn (array $t): bool => $t['homeroom_class_id'] !== null));
 $noCredentials = count(array_filter($teachers, static fn (array $t): bool => (int) $t['has_credentials'] === 0));
+[$subjectsTotal, $subjectsAssigned] = ClassSubject::assignmentCounts($yearId);
 
 echo "Viti shkollor {$year['name']}\n";
 echo '  Klasa:         ' . count($overview) . ' (me kujdestar: ' . SchoolClass::countWithHomeroom($yearId) . ")\n";
-echo '  Mësimdhënës:   ' . count($teachers) . " (kujdestarë: {$withHomeroom}; pa fletë hyrjeje: {$noCredentials})\n\n";
+echo '  Mësimdhënës:   ' . count($teachers) . " (pa fletë hyrjeje: {$noCredentials})\n";
+echo "  Lëndë në klasa: {$subjectsTotal} (me mësimdhënës: {$subjectsAssigned})\n\n";
 
 foreach ($overview as $class) {
-    if ((int) $class['grade_level'] === 12 && (int) $class['section'] <= 5) {
-        printf("  %-7s %s\n", Format::classLabel((int) $class['grade_level'], (int) $class['section']),
-            Format::personName($class['teacher_title'], $class['teacher_first_name'], $class['teacher_last_name']));
+    if ((int) $class['grade_level'] >= 11) {
+        printf("  %-7s %-26s %2d orë në javë\n", Format::classLabel((int) $class['grade_level'], (int) $class['section']),
+            Format::personName($class['teacher_title'], $class['teacher_first_name'], $class['teacher_last_name']),
+            (int) $class['planned_hours']);
     }
 }
 

@@ -465,6 +465,91 @@
     color: var(--danger-deep);
 }
 
+/* Admin: the curriculum (plani mësimor), one card per grade */
+.plan-grid {
+    display: grid;
+    gap: var(--space-5);
+    align-items: start;
+}
+
+@media (min-width: 75rem) {
+    .plan-grid { grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); }
+}
+
+.plan-card .card__head { margin-bottom: var(--space-4); }
+
+.plan-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+}
+
+.plan-list > li {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding-block: .45rem;
+    border-top: 1px solid var(--line);
+}
+
+.plan-list > li:first-child { border-top: 0; }
+
+.plan-list__hours {
+    min-width: 1.5rem;
+    color: var(--ink);
+    font-weight: 700;
+    text-align: right;
+}
+
+.plan-card__total { margin-top: var(--space-4); }
+
+.plan-add__text { margin: var(--space-2) 0 var(--space-5); }
+
+.plan-add__form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--space-4);
+}
+
+.plan-add__actions { padding-top: 1.85rem; }   /* lines the button up with the inputs, below their labels */
+
+/* Subject + weekly hours rows (curriculum and subject forms) */
+.plan-table td { padding-block: var(--space-1); }
+.plan-table .check { padding-top: .35rem; min-height: 2.5rem; }
+.plan-table td.num .field__error { justify-content: flex-end; }
+
+/* Admin: a class's subjects and who teaches them */
+.assign-table__teacher { min-width: 15rem; min-height: 2.75rem; padding-block: .5rem; font-size: var(--text-sm); }
+.assign-hint { margin-top: var(--space-3); }
+
+.assign-extra {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-5) var(--space-7);
+    margin-top: var(--space-6);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--line);
+}
+
+.assign-extra .inline-form { flex: 1 1 20rem; }
+
+.inline-form--room { margin-top: var(--space-4); }
+
+.class-columns {
+    display: grid;
+    gap: var(--space-5);
+    align-items: start;
+}
+
+@media (min-width: 75rem) {
+    .class-columns { grid-template-columns: minmax(0, 1fr) 22rem; }
+}
+
+.class-columns__note { margin-top: var(--space-4); }
+.class-columns__details { margin-top: var(--space-5); }
+
 /* Admin: school setup checklist */
 .setup-list {
     margin-top: var(--space-6);

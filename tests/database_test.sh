@@ -8,7 +8,7 @@
 cd "$(dirname "$0")/.." || exit 1
 MYSQL="${MYSQL_BIN:-/c/xampp_ick/mysql/bin/mysql.exe}"
 DB="kuvendi_lms_constraint_test"
-EXPECTED_REJECTIONS=15
+EXPECTED_REJECTIONS=21
 
 "$MYSQL" -u root -e "DROP DATABASE IF EXISTS $DB; CREATE DATABASE $DB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 "$MYSQL" -u root --default-character-set=utf8mb4 "$DB" -e "source database/schema.sql; source database/seed.sql;" || exit 1

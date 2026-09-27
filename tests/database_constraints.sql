@@ -14,6 +14,8 @@ INSERT INTO assignments (id, class_subject_id, grade_type_id, created_by, title,
 INSERT INTO assessments (id, class_subject_id, term_id, grade_type_id, title, scheduled_on) VALUES (1,1,1,2,'Testi 1','2026-10-09');
 INSERT INTO submissions (assignment_id, student_id, body, submitted_at) VALUES (1,3,'Zgjidhjet','2026-10-01 18:00');
 INSERT INTO grades (student_id, class_subject_id, term_id, grade_type_id, assignment_id, grade, graded_on) VALUES (3,1,1,1,1,5,'2026-10-03');
+INSERT INTO teacher_profiles (user_id, title, timetable_number) VALUES (1,'Prof.',25),(2,'Prof.',NULL);
+INSERT INTO teacher_subjects (teacher_id, subject_id) VALUES (1,4),(2,1);
 SELECT 'fixture inserted OK' AS result;
 
 SELECT '--- each statement below MUST fail ---' AS result;
@@ -47,6 +49,18 @@ INSERT INTO users (role, username, first_name, last_name, email, password_hash) 
 INSERT INTO users (role, username, first_name, last_name, password_hash) VALUES ('student','Arta.Gashi','Arta','Gashi','x');
 -- 15. status value that no longer exists
 INSERT INTO users (role, username, first_name, last_name, password_hash, status) VALUES ('student','p.q','P','Q','x','pending');
+-- 16. a class in a grade the school does not have (grade 9 is not in grade_levels)
+INSERT INTO classes (academic_year_id, grade_level, section) VALUES (1,9,1);
+-- 17. deleting a grade that still has classes
+DELETE FROM grade_levels WHERE level = 10;
+-- 18. curriculum hours outside 1-12
+UPDATE grade_subjects SET weekly_hours = 0 WHERE grade_level = 11 AND subject_id = 4;
+-- 19. curriculum entry for a grade that does not exist
+INSERT INTO grade_subjects (grade_level, subject_id, weekly_hours) VALUES (9,4,4);
+-- 20. two teachers with the same number on the printed timetable
+UPDATE teacher_profiles SET timetable_number = 25 WHERE user_id = 2;
+-- 21. a class-subject with 13 lessons a week
+UPDATE class_subjects SET weekly_hours = 13 WHERE id = 1;
 
 SELECT '--- these MUST succeed ---' AS result;
 -- several students without an e-mail address
@@ -56,8 +70,15 @@ SELECT COUNT(*) AS users_without_email FROM users WHERE email IS NULL;
 INSERT INTO grades (student_id, class_subject_id, term_id, grade_type_id, title, grade, graded_on) VALUES (3,1,1,5,'Përgjigje me gojë',4,'2026-10-05'),(3,1,1,5,'Përgjigje me gojë',5,'2026-10-12');
 -- assessment result
 INSERT INTO grades (student_id, class_subject_id, term_id, grade_type_id, assessment_id, points, grade, graded_on) VALUES (3,1,1,2,1,42.5,4,'2026-10-09');
+-- a new grade, then its curriculum
+INSERT INTO grade_levels (level, shift) VALUES (13, 1);
+INSERT INTO grade_subjects (grade_level, subject_id, weekly_hours) VALUES (13,4,4);
+-- a subject that is only in the curriculum can be deleted; its curriculum rows go with it
+DELETE FROM subjects WHERE name = 'Astronomi';
+SELECT COUNT(*) AS astronomy_rows_left FROM grade_subjects gs LEFT JOIN subjects s ON s.id = gs.subject_id WHERE s.id IS NULL;
 -- removing a teacher un-assigns them without destroying history
 DELETE FROM users WHERE id = 2;
+SELECT COUNT(*) AS teacher_subjects_left_for_removed_teacher FROM teacher_subjects WHERE teacher_id = 2;
 SELECT id, class_id, teacher_id FROM class_subjects WHERE id IN (2,3);
 SELECT id, homeroom_teacher_id FROM classes WHERE id = 2;
 SELECT COUNT(*) AS grades_for_arta FROM grades WHERE student_id = 3;

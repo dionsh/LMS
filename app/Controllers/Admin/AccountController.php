@@ -4,24 +4,21 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
-use App\Controllers\PortalController;
 use App\Core\Auth;
 use App\Core\Response;
 use App\Core\Session;
-use App\Models\AcademicYear;
-use App\Models\SchoolClass;
+use App\Models\Subject;
 use App\Models\User;
 use App\Services\AccountForm;
 use App\Services\Accounts;
 use App\Services\Credentials;
 use App\Services\SlipStore;
-use App\Support\Format;
 
 /**
  * What the admin's student, teacher and account pages share: the add form,
  * saving a new account, and turning issued credentials into printable slips.
  */
-abstract class AccountController extends PortalController
+abstract class AccountController extends AdminController
 {
     /** Navigation key for each role's pages. */
     protected const NAV = ['student' => 'students', 'teacher' => 'teachers', 'admin' => 'users'];
@@ -29,32 +26,16 @@ abstract class AccountController extends PortalController
     /** List page of each role, where "Anulo" and the flash messages lead. */
     protected const LIST_PATH = ['student' => '/admin/nxenesit', 'teacher' => '/admin/mesimdhenesit', 'admin' => '/admin/perdoruesit'];
 
-    protected function yearId(): int
-    {
-        return (int) (AcademicYear::current()['id'] ?? 0);
-    }
-
-    /** Classes of the current year, grouped for <optgroup>: ['X' => [[id, label], …], …] */
-    protected function classOptions(): array
-    {
-        $groups = [];
-        foreach (SchoolClass::optionsForYear($this->yearId()) as $class) {
-            $label = Format::classLabel((int) $class['grade_level'], (int) $class['section']);
-            $groups[explode('/', $label)[0]][] = ['id' => (int) $class['id'], 'label' => $label];
-        }
-
-        return $groups;
-    }
-
     protected function createForm(string $role, array $values, array $errors = [], int $status = 200): Response
     {
         return $this->page('admin/account-create', [
-            'title'   => match ($role) { 'student' => 'Shto nxënës', 'teacher' => 'Shto mësimdhënës', default => 'Shto administrator' },
-            'role'    => $role,
-            'values'  => $values,
-            'errors'  => $errors,
-            'classes' => $role === 'student' ? $this->classOptions() : [],
-            'back'    => self::LIST_PATH[$role],
+            'title'    => match ($role) { 'student' => 'Shto nxënës', 'teacher' => 'Shto mësimdhënës', default => 'Shto administrator' },
+            'role'     => $role,
+            'values'   => $values,
+            'errors'   => $errors,
+            'classes'  => $role === 'student' ? $this->classOptions() : [],
+            'subjects' => $role === 'teacher' ? Subject::options() : [],
+            'back'     => self::LIST_PATH[$role],
         ], self::NAV[$role], $status);
     }
 

@@ -2,7 +2,7 @@
 /**
  * Add a student, teacher or administrator.
  *
- * @var string $role @var array $values @var array $errors @var array $classes @var string $back @var string $title
+ * @var string $role @var array $values @var array $errors @var array $classes @var array $subjects @var string $back @var string $title
  */
 $intro = match ($role) {
     'student' => 'Nxënësi regjistrohet në klasën e zgjedhur për vitin shkollor aktual.',
@@ -30,7 +30,7 @@ $intro = match ($role) {
 <form class="card form account-form" method="post" action="<?= e(url(current_path())) ?>" novalidate>
     <?= csrf_field() ?>
     <p class="form-note">Fushat me <span class="field__required">*</span> janë të detyrueshme.</p>
-    <?= partial('admin/partials/account-fields', ['role' => $role, 'values' => $values, 'errors' => $errors, 'classes' => $classes, 'creating' => true]) ?>
+    <?= partial('admin/partials/account-fields', ['role' => $role, 'values' => $values, 'errors' => $errors, 'classes' => $classes, 'subjects' => $subjects, 'creating' => true]) ?>
     <div class="form-actions">
         <button class="btn btn--primary" type="submit"><?= icon('plus') ?><?= e($title) ?></button>
         <a class="btn btn--quiet" href="<?= e(url($back)) ?>">Anulo</a>

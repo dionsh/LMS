@@ -67,17 +67,13 @@ final class Labels
         'inactive' => 'Joaktiv',
     ];
 
-    /** Grade level → Roman numeral used in class labels (X/13, XI/5, XII/1). */
-    public const GRADE_ROMAN = [
-        10 => 'X',
-        11 => 'XI',
-        12 => 'XII',
-    ];
-
     public const SHIFTS = [
         1 => 'Paradite',
         2 => 'Pasdite',
     ];
+
+    /** School days shown in timetables (ISO numbers). */
+    public const SCHOOL_DAYS = [1, 2, 3, 4, 5];
 
     /** Error pages: status => [heading, explanation]. */
     public const HTTP_ERRORS = [
@@ -115,5 +111,13 @@ final class Labels
     public static function role(string $role): string
     {
         return self::ROLES[$role] ?? $role;
+    }
+
+    /** "Paradite" / "Pasdite"; lowercase for use mid-sentence. */
+    public static function shift(int $shift, bool $lowercase = false): string
+    {
+        $label = self::SHIFTS[$shift] ?? '';
+
+        return $lowercase ? mb_strtolower($label) : $label;
     }
 }
