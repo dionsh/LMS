@@ -11,7 +11,8 @@ declare(strict_types=1);
  *   X-1 … X-15 and XI-8 … XI-15.
  * - The teachers and their timetable numbers (staff.php), the homeroom teachers
  *   of the morning classes (below), the subjects and weekly hours of each grade
- *   (database/seed.sql).
+ *   (database/seed.sql), and the classes that take an elective in place of
+ *   Mësim zgjedhor (below).
  *
  * DEMO (development only, until the school's data arrives):
  * - Which subjects the teachers teach is not known yet, so every subject still
@@ -37,6 +38,12 @@ return [
         [12, 1, 26], [12, 2, 3], [12, 3, 70], [12, 4, 55], [12, 5, 25], [12, 6, 53], [12, 7, 17],
         [12, 8, 4], [12, 9, 48], [12, 10, 66], [12, 11, 54], [12, 12, 9], [12, 13, 69], [12, 14, 15],
         [12, 15, 39],
+    ],
+
+    // Electives: the classes that take one in place of the subject it stands for (Mësim zgjedhor).
+    // Orientim në karrierë is taught by 26 (Enver Bajrami), 2 lessons a week in each of these classes.
+    'electives' => [
+        'Orientim në karrierë' => [[12, 1], [12, 2], [12, 5], [12, 8], [12, 9], [12, 10]],
     ],
 
     // Lessons a week a demo teacher takes at most (the school's full norm)

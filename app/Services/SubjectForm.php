@@ -26,6 +26,7 @@ final class SubjectForm
             'description'     => $request->string('description'),
             'is_active'       => $request->input('is_active') === '1',
             'show_on_website' => $request->input('show_on_website') === '1',
+            'fills_subject_id' => $request->string('fills_subject_id'),
             'grades'          => array_values(array_intersect($chosen, $gradeLevels)),
             'hours'           => array_intersect_key($hours, array_flip($gradeLevels)),
         ];
@@ -35,7 +36,7 @@ final class SubjectForm
     {
         return [
             'name' => '', 'short_name' => '', 'description' => '', 'is_active' => true,
-            'show_on_website' => true, 'grades' => [], 'hours' => [],
+            'show_on_website' => true, 'fills_subject_id' => '', 'grades' => [], 'hours' => [],
         ];
     }
 
@@ -48,15 +49,25 @@ final class SubjectForm
             'description'     => (string) $subject['description'],
             'is_active'       => (int) $subject['is_active'] === 1,
             'show_on_website' => (int) $subject['show_on_website'] === 1,
+            'fills_subject_id' => $subject['fills_subject_id'] !== null ? (string) $subject['fills_subject_id'] : '',
             'grades'          => array_keys($curriculum),
             'hours'           => array_map(static fn (?int $h): string => $h === null ? '' : (string) $h, $curriculum),
         ];
     }
 
-    /** @return array<string, string> errors by field (hours per grade: "hours-10") */
-    public static function validate(array $values, ?int $subjectId): array
+    /**
+     * @param list<int> $places subjects an elective can take the place of
+     * @return array<string, string> errors by field (hours per grade: "hours-10")
+     */
+    public static function validate(array $values, ?int $subjectId, array $places): array
     {
         $v = new Validator($values);
+
+        if ($values['fills_subject_id'] !== '') {
+            $v->rule('fills_subject_id', ctype_digit($values['fills_subject_id']) && in_array((int) $values['fills_subject_id'], $places, true), 'Zgjidhni lëndën nga lista.')
+              ->rule('fills_subject_id', $subjectId === null || !Subject::hasElectives($subjectId), 'Kjo lëndë ka vetë lëndë zgjedhore në vend të saj, prandaj nuk mund të jetë zgjedhore.')
+              ->rule('fills_subject_id', $values['grades'] === [], 'Lënda zgjedhore merr orët e lëndës që zëvendëson: mos i shënoni klasat më poshtë.');
+        }
 
         $v->required('name', 'Shkruani emrin e lëndës.')
           ->maxLength('name', 100, 'Emri mund të ketë deri në 100 karaktere.')
@@ -80,6 +91,7 @@ final class SubjectForm
             'description'     => $values['description'] !== '' ? $values['description'] : null,
             'is_active'       => $values['is_active'],
             'show_on_website' => $values['show_on_website'],
+            'fills_subject_id' => $values['fills_subject_id'] !== '' ? (int) $values['fills_subject_id'] : null,
         ];
     }
 

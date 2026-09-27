@@ -29,8 +29,8 @@ use App\Support\Labels;
  *   3. never a subject the class has given to, or matched with, another of its
  *      teachers on the sheet.
  * The teacher's lessons in the class have to add up to the subject's weekly
- * hours. A teacher with two subjects in one class (4 + 2 lessons) gets both,
- * and the split is flagged for checking.
+ * hours. A teacher with two subjects in one class (4 + 2 lessons) gets both;
+ * which lessons are which is decided by distribute(), and flagged for checking.
  *
  * A class whose every number can be read like this is ready. Applying the
  * sheet makes it the timetable of the ready classes, with those teachers.
@@ -213,6 +213,12 @@ final class ScheduleSheetService
             }
         }
 
+        // The class timetables as they are now
+        $current = [];
+        foreach (ScheduleEntry::forShift($academicYearId, $shift) as $entry) {
+            $current[(int) $entry['class_id']][(int) $entry['day']][(int) $entry['period']] = (int) $entry['class_subject_id'];
+        }
+
         // 4. Which subject each number stands for, class by class, and what the class's week becomes
         $matches = [];   // class id => number => match()
         $plans = [];     // class id => ['slots' => day => period => class-subject id, 'teachers' => class-subject id => teacher id]
@@ -233,15 +239,16 @@ final class ScheduleSheetService
 
             $plan = ['slots' => [], 'teachers' => []];
             foreach ($matches[$classId] as $number => $match) {
-                // Two subjects: the first one's hours take the teacher's first lessons of the week
-                $queue = [];
+                $hours = [];   // class-subject id => weekly hours
                 foreach ($match['subjects'] as $subjectId) {
                     $row = $subjects[$classId][$subjectId];
                     $plan['teachers'][(int) $row['id']] = (int) $numbers[$number]['id'];
-                    $queue = array_merge($queue, array_fill(0, max(1, (int) $row['hours']), (int) $row['id']));
+                    $hours[(int) $row['id']] = (int) $row['hours'];
                 }
-                foreach ($queue === [] ? [] : $slots[$number][$classId] as $index => [$day, $period]) {
-                    $plan['slots'][$day][$period] = $queue[min($index, count($queue) - 1)];
+                foreach ($hours === [] ? [] : self::distribute($slots[$number][$classId], $hours, $current[$classId] ?? []) as $day => $row) {
+                    foreach ($row as $period => $csId) {
+                        $plan['slots'][$day][$period] = $csId;
+                    }
                 }
             }
             $plans[$classId] = $plan;
@@ -280,10 +287,6 @@ final class ScheduleSheetService
         } while ($blockedNow);
 
         // 6. Ready classes whose timetable already is the sheet
-        $current = [];
-        foreach (ScheduleEntry::forShift($academicYearId, $shift) as $entry) {
-            $current[(int) $entry['class_id']][(int) $entry['day']][(int) $entry['period']] = (int) $entry['class_subject_id'];
-        }
         foreach ($states as $classId => $state) {
             if ($state !== self::READY) {
                 continue;
@@ -308,7 +311,26 @@ final class ScheduleSheetService
                     $warnings[] = $label . ': ' . $who($number) . ' ka ' . $count . ' orë ' . $row['subject_name'] . ' në javë, plani ka ' . (int) $row['hours'] . '.';
                 } elseif ($match['state'] === 'split') {
                     $parts = array_map(static fn (int $id): string => $subjects[$classId][$id]['subject_name'] . ' (' . (int) $subjects[$classId][$id]['hours'] . ')', $match['subjects']);
-                    $warnings[] = $label . ': ' . $who($number) . ' jep ' . implode(' dhe ', $parts) . '. Orët u ndanë sipas radhës në javë; kontrollojini te orari i klasës.';
+                    // Where each subject but the main one (most hours) went
+                    $where = [];
+                    $byHours = $match['subjects'];   // the same order as distribute(): the main subject last
+                    usort($byHours, static fn (int $a, int $b): int => (int) $subjects[$classId][$a]['hours'] <=> (int) $subjects[$classId][$b]['hours']);
+                    $main = end($byHours);
+                    foreach ($match['subjects'] as $subjectId) {
+                        if ($subjectId === $main) {
+                            continue;
+                        }
+                        $byDay = [];
+                        foreach ($slots[$number][$classId] as [$day, $period]) {
+                            if (($plans[$classId]['slots'][$day][$period] ?? null) === (int) $subjects[$classId][$subjectId]['id']) {
+                                $byDay[$day][] = $period;
+                            }
+                        }
+                        $where[] = $subjects[$classId][$subjectId]['subject_name'] . ': '
+                            . implode('; ', array_map(static fn (int $day, array $periods): string => Labels::day($day) . ', ora ' . implode(' dhe ', $periods), array_keys($byDay), $byDay));
+                    }
+                    $warnings[] = $label . ': ' . $who($number) . ' jep ' . implode(' dhe ', $parts) . '. ' . implode('. ', $where)
+                        . '. Nëse është ndryshe, ndryshojeni te orari i klasës; ndryshimi ruhet.';
                 }
             }
 
@@ -509,6 +531,77 @@ final class ScheduleSheetService
         ksort($result);
 
         return $result;
+    }
+
+    /**
+     * Which of a teacher's lessons in a class are which subject, when the teacher
+     * has more than one there (Matematikë 4 + Orientim në karrierë 2):
+     *   - the class's timetable as it is, if it already splits them that way
+     *     (so a correction made in the class editor stays);
+     *   - otherwise each smaller subject takes the last day of the week on which
+     *     the teacher has exactly that many lessons with the class (or else the
+     *     teacher's last lessons of the week), and the main subject the rest.
+     *
+     * @param list<array{0: int, 1: int}> $lessons [day, period] in the order of the week
+     * @param array<int, int> $hours  class-subject id => weekly hours
+     * @param array<int, array<int, int>> $current  the class's timetable: day => period => class-subject id
+     * @return array<int, array<int, int>> day => period => class-subject id
+     */
+    private static function distribute(array $lessons, array $hours, array $current): array
+    {
+        $plan = [];
+        if (count($hours) === 1) {
+            foreach ($lessons as [$day, $period]) {
+                $plan[$day][$period] = array_key_first($hours);
+            }
+            return $plan;
+        }
+
+        $counts = [];
+        foreach ($lessons as [$day, $period]) {
+            $csId = $current[$day][$period] ?? null;
+            if ($csId === null || !isset($hours[$csId])) {
+                $counts = null;
+                break;
+            }
+            $plan[$day][$period] = $csId;
+            $counts[$csId] = ($counts[$csId] ?? 0) + 1;
+        }
+        if ($counts !== null && $counts == $hours) {
+            return $plan;
+        }
+
+        $plan = [];
+        $left = $lessons;
+        $order = array_keys($hours);
+        usort($order, static fn (int $a, int $b): int => $hours[$a] <=> $hours[$b]);   // fewest hours first
+        $main = array_pop($order);
+        foreach ($order as $csId) {
+            if ($hours[$csId] < 1) {
+                continue;
+            }
+            $byDay = [];
+            foreach ($left as $index => [$day]) {
+                $byDay[$day][] = $index;
+            }
+            $take = null;
+            foreach (array_reverse($byDay, true) as $indexes) {
+                if (count($indexes) === $hours[$csId]) {
+                    $take = $indexes;
+                    break;
+                }
+            }
+            foreach ($take ?? array_slice(array_keys($left), -$hours[$csId]) as $index) {
+                [$day, $period] = $left[$index];
+                $plan[$day][$period] = $csId;
+                unset($left[$index]);
+            }
+        }
+        foreach ($left as [$day, $period]) {
+            $plan[$day][$period] = $main;
+        }
+
+        return $plan;
     }
 
     /** Why a teacher's subject in a class is not known, in a few words. */

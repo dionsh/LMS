@@ -46,7 +46,9 @@ $active = count(array_filter($subjects, static fn (array $s): bool => (int) $s['
                             <span class="table__secondary"><?= e($subject['short_name']) ?></span>
                         </td>
                         <td data-label="Klasat">
-                            <?php if ($subject['grades'] === null): ?>
+                            <?php if ($subject['fills_subject_id'] !== null): ?>
+                                <span class="meta">Zgjedhore, në vend të <?= e($subject['fills_name']) ?></span>
+                            <?php elseif ($subject['grades'] === null): ?>
                                 <span class="meta">Asnjë</span>
                             <?php else: ?>
                                 <span class="cluster cluster--tight">

@@ -15,7 +15,8 @@ final class User extends Model
     private const LOAD = '(SELECT COALESCE(SUM(COALESCE(lcs.weekly_hours, lgs.weekly_hours)), 0)
                              FROM class_subjects lcs
                              JOIN classes lc ON lc.id = lcs.class_id
-                             LEFT JOIN grade_subjects lgs ON lgs.grade_level = lc.grade_level AND lgs.subject_id = lcs.subject_id
+                             JOIN subjects ls ON ls.id = lcs.subject_id
+                             LEFT JOIN grade_subjects lgs ON lgs.grade_level = lc.grade_level AND lgs.subject_id = COALESCE(ls.fills_subject_id, lcs.subject_id)
                             WHERE lcs.teacher_id = u.id AND lc.academic_year_id = :year_load)';
 
     /** Columns safe to keep in memory for the signed-in user (never the password hash). */

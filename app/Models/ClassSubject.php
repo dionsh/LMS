@@ -12,13 +12,15 @@ use App\Core\Model;
  *
  * Weekly hours: a class follows its grade's curriculum (grade_subjects) unless
  * it has its own number (class_subjects.weekly_hours); `hours` below is the
- * number that applies.
+ * number that applies. An elective the class chose (Orientim në karrierë) has
+ * the curriculum hours of the subject it takes the place of (Mësim zgjedhor).
  */
 final class ClassSubject extends Model
 {
     private const HOURS = 'COALESCE(cs.weekly_hours, gs.weekly_hours)';
 
-    private const CURRICULUM_JOIN = 'LEFT JOIN grade_subjects gs ON gs.grade_level = c.grade_level AND gs.subject_id = cs.subject_id';
+    /** Needs `subjects s` joined before it. */
+    private const CURRICULUM_JOIN = 'LEFT JOIN grade_subjects gs ON gs.grade_level = c.grade_level AND gs.subject_id = COALESCE(s.fills_subject_id, cs.subject_id)';
 
     /**
      * The subjects of a class with their teacher, hours (own / curriculum / applying),
@@ -27,7 +29,7 @@ final class ClassSubject extends Model
     public static function forClass(int $classId): array
     {
         return self::fetchAll(
-            'SELECT cs.id, cs.class_id, cs.subject_id, cs.teacher_id,
+            'SELECT cs.id, cs.class_id, cs.subject_id, s.fills_subject_id, cs.teacher_id,
                     cs.weekly_hours AS own_hours, gs.weekly_hours AS plan_hours, ' . self::HOURS . ' AS hours,
                     gs.subject_id IS NOT NULL AS in_curriculum,
                     s.name AS subject_name, s.short_name, s.is_active AS subject_active,
@@ -64,8 +66,8 @@ final class ClassSubject extends Model
 
     /**
      * Give classes every subject of their grade's curriculum they do not have yet
-     * (no teacher, hours as in the curriculum). Limited to one grade or one class
-     * when given. Returns how many subjects were added.
+     * (no teacher, hours as in the curriculum) — nor an elective in its place.
+     * Limited to one grade or one class when given. Returns how many subjects were added.
      */
     public static function addFromCurriculum(int $academicYearId, ?int $gradeLevel = null, ?int $classId = null): int
     {
@@ -74,7 +76,9 @@ final class ClassSubject extends Model
                   FROM classes c
                   JOIN grade_subjects gs ON gs.grade_level = c.grade_level
                   LEFT JOIN class_subjects cs ON cs.class_id = c.id AND cs.subject_id = gs.subject_id
-                 WHERE c.academic_year_id = :year AND cs.id IS NULL';
+                 WHERE c.academic_year_id = :year AND cs.id IS NULL
+                   AND NOT EXISTS (SELECT 1 FROM class_subjects ce JOIN subjects e ON e.id = ce.subject_id
+                                    WHERE ce.class_id = c.id AND e.fills_subject_id = gs.subject_id)';
         $params = ['year' => $academicYearId];
 
         if ($gradeLevel !== null) {
@@ -132,6 +136,12 @@ final class ClassSubject extends Model
               ORDER BY c.grade_level, c.section, s.sort_order',
             [$academicYearId]
         );
+    }
+
+    /** Change which subject a class-subject is (an elective in place of Mësim zgjedhor, or back); lessons and marks stay with it. */
+    public static function setSubject(int $id, int $subjectId): void
+    {
+        self::execute('UPDATE class_subjects SET subject_id = ? WHERE id = ?', [$subjectId, $id]);
     }
 
     public static function setTeacher(int $id, ?int $teacherId): void

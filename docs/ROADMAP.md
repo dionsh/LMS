@@ -117,6 +117,16 @@ Legend: ✅ done · 🟡 partly done · 🔜 next · ⬜ planned
     - 45 classes in two shifts; the school's 72 teachers from the staff list with their timetable numbers
     - teaching norm per teacher (20 lessons, less for part-time), with load against norm on the teacher list, the teacher's page and in the subject-assignment lists
     - the photos of the timetable and the staff list are no longer kept in the repository; their content is in `database/demo/`
+- ✅ **T06c · Electives (lëndë zgjedhore)** — **done 27 Sep 2026**: `tests/structure_test.sh` passes 128/128, `tests/school_data_test.sh` 60/60, `tests/sheet_test.sh` 97/97 and `tests/database_test.sh` 29/29.
+  - Verified:
+    - *Orientim në karrierë* takes the place of *Mësim zgjedhor* in XII-1, XII-2, XII-5, XII-8, XII-9 and XII-10, with its 2 lessons a week. Every class still plans 30 lessons, and XII-1's students see the subject by its own name.
+    - An elective is added under Lëndët (*Lëndë zgjedhore në vend të …*). It cannot have grades of its own, a subject that has electives cannot be one, and one in use cannot be deleted.
+    - A class chooses its elective on its page: the same row keeps its teacher and lessons, and saving the curriculum does not bring *Mësim zgjedhor* back.
+    - 26 (Enver Bajrami) teaches Matematikë and *Orientim në karrierë*. In the timetable in numbers, 26's career-orientation lessons fall on Thursday in XII-1 (2nd and 4th lessons) and XII-2 (1st and 6th), as the school said, and a correction made in the class editor stays.
+  - Deliverables:
+    - electives (`subjects.fills_subject_id`), set on the subject form and chosen per class on the class page
+    - *Orientim në karrierë* in the seed and in its six classes (`database/demo/school-data.php`)
+    - in the timetable in numbers: which of a teacher's lessons are which subject, when the teacher has two in one class
 - 🟡 **T07 · Demo school data** — **part done 27 Sep 2026** (brought forward at the school's request):
   - `database/demo/school.php` loads the school's real structure (T06b), and, only where the school's data is not known yet:
     - demo teachers ("Demo Matematikë 1" …, at most 20 lessons a week) for subjects whose real teacher is not known;

@@ -204,7 +204,8 @@ final class SchoolClass extends Model
                     (SELECT COUNT(*) FROM class_subjects cs WHERE cs.class_id = c.id AND cs.teacher_id IS NOT NULL) AS subjects_with_teacher,
                     (SELECT SUM(COALESCE(cs.weekly_hours, gs.weekly_hours))
                        FROM class_subjects cs
-                       LEFT JOIN grade_subjects gs ON gs.grade_level = c.grade_level AND gs.subject_id = cs.subject_id
+                       JOIN subjects s ON s.id = cs.subject_id
+                       LEFT JOIN grade_subjects gs ON gs.grade_level = c.grade_level AND gs.subject_id = COALESCE(s.fills_subject_id, cs.subject_id)
                       WHERE cs.class_id = c.id) AS planned_hours,
                     (SELECT COUNT(*) FROM schedule_entries se WHERE se.class_id = c.id) AS lessons
                FROM classes c

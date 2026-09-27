@@ -38,7 +38,7 @@ final class SubjectController extends AdminController
     public function store(): Response
     {
         $values = SubjectForm::read($this->request, $this->gradeLevels());
-        $errors = SubjectForm::validate($values, null);
+        $errors = SubjectForm::validate($values, null, array_column($this->places(null), 'id'));
 
         if ($errors !== []) {
             return $this->form(null, $values, $errors, 422);
@@ -63,7 +63,7 @@ final class SubjectController extends AdminController
     {
         $subject = $this->findOrFail($id);
         $values = SubjectForm::read($this->request, $this->gradeLevels());
-        $errors = SubjectForm::validate($values, $id);
+        $errors = SubjectForm::validate($values, $id, array_column($this->places($id), 'id'));
 
         if ($errors !== []) {
             return $this->form($subject, $values, $errors, 422);
@@ -102,6 +102,14 @@ final class SubjectController extends AdminController
         return array_keys(GradeLevel::shifts());
     }
 
+    /** Subjects an elective can take the place of: not electives themselves, not the subject itself. */
+    private function places(?int $subjectId): array
+    {
+        $places = array_filter(Subject::options(), static fn (array $s): bool => $s['fills_subject_id'] === null && (int) $s['id'] !== $subjectId);
+
+        return array_map(static fn (array $s): array => ['id' => (int) $s['id'], 'name' => $s['name']], array_values($places));
+    }
+
     private function form(?array $subject, array $values, array $errors, int $status = 200): Response
     {
         return $this->page('admin/subject-form', [
@@ -109,6 +117,7 @@ final class SubjectController extends AdminController
             'subject'  => $subject,
             'values'   => $values,
             'errors'   => $errors,
+            'places'   => $this->places($subject !== null ? (int) $subject['id'] : null),
             'grades'   => $this->gradeLevels(),
             'teachers' => $subject !== null ? Subject::teachers((int) $subject['id']) : [],
             'taught'   => $subject !== null && Subject::isTaught((int) $subject['id']),

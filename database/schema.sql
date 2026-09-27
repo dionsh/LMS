@@ -158,10 +158,15 @@ CREATE TABLE subjects (
   is_active       TINYINT(1)        NOT NULL DEFAULT 1,
   show_on_website TINYINT(1)        NOT NULL DEFAULT 1,
   sort_order      SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  fills_subject_id INT UNSIGNED     NULL,               -- an elective: a class that chooses it takes it in place of
+                                                        -- this subject, with its weekly hours (Orientim në karrierë → Mësim zgjedhor)
   created_at      DATETIME          NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at      DATETIME          NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE KEY uq_subjects_name (name)
+  UNIQUE KEY uq_subjects_name (name),
+  KEY idx_subjects_fills (fills_subject_id),
+  CONSTRAINT fk_subjects_fills FOREIGN KEY (fills_subject_id)
+    REFERENCES subjects (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- The curriculum (plani mësimor): which subjects a grade studies and how

@@ -152,6 +152,42 @@ check "a curriculum subject cannot be removed by hand"      "14" "$(post $A /adm
 check "remove Astronomi"                                    "302 /admin/klasat/$XI16" "$(post $A /admin/klasat/$XI16/lendet/hiq /admin/klasat/$XI16 --data-urlencode class_subject_id=$CS_ASTR)"
 check "…gone"                                               "13" "$(SQL "SELECT COUNT(*) FROM class_subjects WHERE class_id=$XI16")"
 
+echo; echo "== Electives (lëndë zgjedhore) =="
+MZ=$(SQL "SELECT id FROM subjects WHERE short_name = 'Zgjedh.'")
+CAREER=$(SQL "SELECT id FROM subjects WHERE short_name LIKE 'Karrier%'")
+# The class's teachers and hours as they are, so a save changes only what a check is about
+keep()   { SQL "SELECT CONCAT('teacher[',id,']=',COALESCE(teacher_id,''),'&hours[',id,']=',COALESCE(weekly_hours,'')) FROM class_subjects WHERE class_id = $1" | tr -d '\r' | paste -sd'&' -; }
+planned(){ SQL "SELECT SUM(COALESCE(cs.weekly_hours, gs.weekly_hours)) FROM class_subjects cs JOIN classes c ON c.id=cs.class_id JOIN subjects s ON s.id=cs.subject_id LEFT JOIN grade_subjects gs ON gs.grade_level=c.grade_level AND gs.subject_id=COALESCE(s.fills_subject_id, cs.subject_id) WHERE cs.class_id = $1"; }
+code $A /admin/lendet >/dev/null
+contains "the subject list marks Orientim në karrierë"      "$T/body" "Zgjedhore, në vend të Mësim zgjedhor"
+check "an elective with grades of its own → 422"           "422 " "$(post $A /admin/lendet/shto /admin/lendet/shto --data-urlencode "name=Test Programim" --data-urlencode fills_subject_id=$MZ --data-urlencode "grades[]=11" --data-urlencode "hours[11]=2" --data-urlencode is_active=1)"
+contains "…says why"                                        "$T/body" "Lënda zgjedhore merr orët e lëndës që zëvendëson"
+check "an elective in place of an elective → 422"          "422 " "$(post $A /admin/lendet/shto /admin/lendet/shto --data-urlencode "name=Test Programim" --data-urlencode fills_subject_id=$CAREER --data-urlencode is_active=1)"
+check "add Test Programim in place of Mësim zgjedhor"       "302 /admin/lendet" "$(post $A /admin/lendet/shto /admin/lendet/shto --data-urlencode "name=Test Programim" --data-urlencode fills_subject_id=$MZ --data-urlencode is_active=1)"
+PROG=$(SQL "SELECT id FROM subjects WHERE name = 'Test Programim'")
+check "…no grade takes it by itself"                        "0" "$(SQL "SELECT COUNT(*) FROM grade_subjects WHERE subject_id = $PROG")"
+check "Mësim zgjedhor cannot become an elective itself"     "422 " "$(post $A /admin/lendet/$MZ/ndrysho /admin/lendet/$MZ/ndrysho --data "name=M%C3%ABsim%20zgjedhor" --data-urlencode fills_subject_id=$MAT --data-urlencode is_active=1)"
+contains "…it has electives"                                "$T/body" "Kjo lëndë ka vetë lëndë zgjedhore"
+CS_MZ=$(SQL "SELECT id FROM class_subjects WHERE class_id=$XI16 AND subject_id=$MZ")
+code $A /admin/klasat/$XI16 >/dev/null
+contains "the class page lets XI-16 choose"                 "$T/body" "name=\"subject\[$CS_MZ\]\""
+contains "…Orientim në karrierë or Test Programim"          "$T/body" "Orientim në karrierë</option>"
+BEFORE_H=$(planned $XI16)
+check "Matematikë in place of Mësim zgjedhor → 422"         "422 " "$(post $A /admin/klasat/$XI16/lendet /admin/klasat/$XI16 --data "$(keep $XI16)" --data-urlencode "subject[$CS_MZ]=$MAT")"
+check "XI-16 takes Test Programim"                          "302 /admin/klasat/$XI16" "$(post $A /admin/klasat/$XI16/lendet /admin/klasat/$XI16 --data "$(keep $XI16)" --data-urlencode "subject[$CS_MZ]=$PROG")"
+check "…in the same place, with the 2 hours of the plan"    "$PROG 2" "$(SQL "SELECT CONCAT(cs.subject_id,' ',gs.weekly_hours) FROM class_subjects cs JOIN classes c ON c.id=cs.class_id JOIN subjects s ON s.id=cs.subject_id JOIN grade_subjects gs ON gs.grade_level=c.grade_level AND gs.subject_id=COALESCE(s.fills_subject_id, cs.subject_id) WHERE cs.id=$CS_MZ")"
+check "…the class plans as many lessons as before"          "$BEFORE_H" "$(planned $XI16)"
+XI_FORM=()
+while read -r sid hours; do XI_FORM+=(--data-urlencode "subjects[]=$sid" --data-urlencode "hours[$sid]=$hours"); done \
+  < <(SQL "SELECT subject_id, COALESCE(weekly_hours,'') FROM grade_subjects WHERE grade_level = 11" | tr -d '\r')
+post $A /admin/plani-mesimor/11 /admin/plani-mesimor/11 --data-urlencode shift=1 "${XI_FORM[@]}" >/dev/null
+check "saving XI's curriculum does not add Mësim zgjedhor back" "0" "$(SQL "SELECT COUNT(*) FROM class_subjects WHERE class_id=$XI16 AND subject_id=$MZ")"
+check "…and XI-16 keeps 13 subjects"                         "13" "$(SQL "SELECT COUNT(*) FROM class_subjects WHERE class_id=$XI16")"
+check "a taught elective cannot be deleted"                  "1" "$(post $A /admin/lendet/$PROG/fshij /admin/lendet/$PROG/ndrysho >/dev/null; SQL "SELECT COUNT(*) FROM subjects WHERE id=$PROG")"
+check "back to Mësim zgjedhor"                               "302 /admin/klasat/$XI16" "$(post $A /admin/klasat/$XI16/lendet /admin/klasat/$XI16 --data "$(keep $XI16)" --data-urlencode "subject[$CS_MZ]=$MZ")"
+check "…the same row again"                                  "$MZ" "$(SQL "SELECT subject_id FROM class_subjects WHERE id=$CS_MZ")"
+check "an elective nobody takes can be deleted"              "302 /admin/lendet" "$(post $A /admin/lendet/$PROG/fshij /admin/lendet/$PROG/ndrysho)"
+
 echo; echo "== Rooms: the class's own room =="
 check "rooms page"                                          "200" "$(code $A /admin/sallat)"
 check "add Test Salla 12"                                   "302 /admin/sallat" "$(post $A /admin/sallat/shto /admin/sallat --data-urlencode "name=Test Salla 12" --data-urlencode capacity=32)"

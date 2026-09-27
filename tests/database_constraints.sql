@@ -77,6 +77,8 @@ INSERT INTO duty_posts (name, places, sort_order) VALUES ('Oborri',0,5);
 INSERT INTO schedule_sheet_cells (class_id, day_of_week, period_number, teacher_number) VALUES (1,1,1,26);
 -- 28. the timetable in numbers: the number 0
 INSERT INTO schedule_sheet_cells (class_id, day_of_week, period_number, teacher_number) VALUES (1,1,2,0);
+-- 29. an elective in place of a subject that does not exist
+INSERT INTO subjects (name, short_name, fills_subject_id) VALUES ('Test zgjedhore','Test',9999);
 
 SELECT '--- these MUST succeed ---' AS result;
 -- several students without an e-mail address
@@ -101,3 +103,8 @@ SELECT COUNT(*) AS grades_for_arta FROM grades WHERE student_id = 3;
 -- the same teacher can keep duty in the other shift on the same day
 INSERT INTO duty_assignments (academic_year_id, shift, day_of_week, duty_post_id, place, teacher_id) VALUES (1,2,1,(SELECT id FROM duty_posts WHERE sort_order = 1),1,1);
 SELECT COUNT(*) AS duty_days_for_arben FROM duty_assignments WHERE teacher_id = 1;
+-- deleting the subject an elective stands in for leaves the elective as a subject of its own
+INSERT INTO subjects (name, short_name) VALUES ('Test vend','Test');
+INSERT INTO subjects (name, short_name, fills_subject_id) SELECT 'Test zgjedhore','Test', id FROM subjects WHERE name = 'Test vend';
+DELETE FROM subjects WHERE name = 'Test vend';
+SELECT COUNT(*) AS electives_left_standalone FROM subjects WHERE name = 'Test zgjedhore' AND fills_subject_id IS NULL;

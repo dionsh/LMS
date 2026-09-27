@@ -4,6 +4,7 @@
  *
  * @var array|null $subject   null when adding
  * @var array $values @var array $errors
+ * @var list<array> $places   subjects an elective can take the place of: [[id, name], …]
  * @var list<int> $grades     the school's grade levels
  * @var list<array> $teachers teachers who teach it (editing only)
  * @var bool $taught          taught in some class (cannot be deleted)
@@ -55,6 +56,18 @@ $action = $editing ? '/admin/lendet/' . $subject['id'] . '/ndrysho' : '/admin/le
                           <?= field_invalid($errors, 'description', 'description-hint') ?: ' aria-describedby="description-hint"' ?>><?= e($values['description']) ?></textarea>
                 <p class="field__hint" id="description-hint">Shfaqet në faqen publike “Programet”. Opsional.</p>
                 <?= field_error($errors, 'description') ?>
+            </div>
+            <div class="field">
+                <label class="field__label" for="fills_subject_id">Lëndë zgjedhore në vend të</label>
+                <select class="select" id="fills_subject_id" name="fills_subject_id"
+                        <?= field_invalid($errors, 'fills_subject_id', 'fills_subject_id-hint') ?: ' aria-describedby="fills_subject_id-hint"' ?>>
+                    <option value="">— Jo, është lëndë më vete</option>
+                    <?php foreach ($places as $place): ?>
+                        <option value="<?= e($place['id']) ?>"<?= (string) $place['id'] === $values['fills_subject_id'] ? ' selected' : '' ?>><?= e($place['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="field__hint" id="fills_subject_id-hint">P.sh. Orientim në karrierë në vend të Mësimit zgjedhor. Klasat që e zgjedhin (te faqja e klasës) e marrin me të njëjtat orë në javë, prandaj lënda zgjedhore nuk ka klasa më poshtë.</p>
+                <?= field_error($errors, 'fills_subject_id') ?>
             </div>
         </fieldset>
 

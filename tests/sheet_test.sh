@@ -57,7 +57,7 @@ S="$T/student"; login $S ariana.gashi Nxenes-Demo-2026 >/dev/null
 M="$T/teacher"; login $M prove.mesimdhenes Prove-Mesimdhenes-2026 >/dev/null
 LOG_START=$(SQL "SELECT COALESCE(MAX(id), 0) FROM activity_log")
 class_id() { SQL "SELECT id FROM classes WHERE grade_level = $1 AND section = $2 AND academic_year_id = $YEAR"; }
-XI1=$(class_id 11 1); XI2=$(class_id 11 2); XI3=$(class_id 11 3); XII1=$(class_id 12 1); XII15=$(class_id 12 15)
+XI1=$(class_id 11 1); XI2=$(class_id 11 2); XI3=$(class_id 11 3); XII1=$(class_id 12 1); XII2=$(class_id 12 2); XII15=$(class_id 12 15)
 T29=$(SQL "SELECT user_id FROM teacher_profiles WHERE timetable_number = 29")
 
 echo "== Who may see and change it =="
@@ -143,7 +143,7 @@ code $A '/admin/orari/numrat?ndrrimi=1' >/dev/null
 check "XI-1 and XI-3 (the same 12 teachers) are ready"       "2" "$(grep -c 'badge--success">Gati<' $T/body)"
 contains "…named above the button"                           "$T/body" "Gati për t’u aplikuar: XI-1, XI-3."
 contains "…with the button"                                  "$T/body" "Apliko në orar"
-contains "two subjects of one teacher are flagged"           "$T/body" "XI-1: Dardan Aliu (68) jep Teknologji (1) dhe Filozofi (2)."
+contains "two subjects of one teacher are flagged"           "$T/body" "XI-1: Dardan Aliu (68) jep Teknologji (1) dhe Filozofi (2). Teknologji: e premte, ora 1."
 contains "a teacher's subjects in the list"                  "$T/body" "Matematik"
 check "apply"                                                "302 /admin/orari/numrat?ndrrimi=1" "$(post $A /admin/orari/numrat/1/apliko '/admin/orari/numrat?ndrrimi=1')"
 code $A '/admin/orari/numrat?ndrrimi=1' >/dev/null
@@ -151,8 +151,9 @@ contains "…says which classes"                               "$T/body" "Orari 
 check "…both are now in the timetable"                       "2" "$(grep -c 'badge--info">Në orar<' $T/body)"
 check "XI-1: 30 lessons"                                     "30" "$(SQL "SELECT COUNT(*) FROM schedule_entries WHERE class_id = $XI1")"
 check "…Monday 1st: Matematikë with 29"                      "Mat./29" "$(lesson $XI1 1 1)"
-check "…Monday 2nd: TIK with 68 (68's first lesson here)"    "TIK/68" "$(lesson $XI1 1 2)"
+check "…Monday 2nd: Filozofi with 68"                        "Filoz./68" "$(lesson $XI1 1 2)"
 check "…Tuesday 2nd: Filozofi with 68"                       "Filoz./68" "$(lesson $XI1 2 2)"
+check "…Friday 1st: TIK, the day 68 has 1 lesson here"      "TIK/68" "$(lesson $XI1 5 1)"
 check "…Friday 6th: Kimi with 44"                            "Kimi/44" "$(lesson $XI1 5 6)"
 check "…29 teaches Matematikë in XI-1"                       "$T29" "$(SQL "SELECT cs.teacher_id FROM class_subjects cs JOIN subjects s ON s.id = cs.subject_id WHERE cs.class_id = $XI1 AND s.short_name = 'Mat.'")"
 check "XI-3 too: Wednesday 1st, Matematikë with 29"          "Mat./29" "$(lesson $XI3 3 1)"
@@ -171,6 +172,31 @@ SQL "UPDATE class_subjects cs JOIN subjects s ON s.id = cs.subject_id SET cs.tea
 code $A '/admin/orari/numrat?ndrrimi=1' >/dev/null
 contains "a subject given in the class counts first"         "$T/body" "XI-3: Fizikë e ka Ylber Ukshini (44)"
 check "…so XI-3 waits for the admin"                         "21" "$(grep -c 'badge--plain">Pret lëndët<' $T/body)"
+
+echo; echo "== 26: Matematikë and Orientim në karrierë in XII-1 and XII-2 =="
+# The other teachers of XII-1 and XII-2 (made up for the test); 26's subjects come from staff.php
+give 3 Shqip; give 15 Gjerm.; give 36 Kimi; give 55 Biol.; give 41 Fiz.; give 42 Fiz.; give 25 Angl.
+give 60 "Ed. fiz."; give 47 TIK; give 67 Gjeogr.; give 66 Gjeogr.; give 11 Astr.; give 13 Astr.
+code $A '/admin/orari/numrat?ndrrimi=1' >/dev/null
+contains "XII-1 and XII-2 are ready"                         "$T/body" "Gati për t’u aplikuar: XII-1, XII-2."
+contains "…26's Orientim në karrierë in XII-1: Thursday"     "$T/body" "XII-1: Enver Bajrami (26) jep Matematikë (4) dhe Orientim në karrierë (2). Orientim në karrierë: e enjte, ora 2 dhe 4."
+contains "…in XII-2: a day with 2 lessons with 26 (Thursday)" "$T/body" "Orientim në karrierë: e enjte, ora 1 dhe 6."
+check "apply"                                                "302 /admin/orari/numrat?ndrrimi=1" "$(post $A /admin/orari/numrat/1/apliko '/admin/orari/numrat?ndrrimi=1')"
+check "XII-1, Thursday 2nd and 4th: Orientim në karrierë"    "Karrierë/26 Karrierë/26" "$(echo $(lesson $XII1 4 2) $(lesson $XII1 4 4))"
+check "…Monday 3rd and 4th, Tuesday 4th, Wednesday 6th: Matematikë" "Mat./26 Mat./26 Mat./26 Mat./26" "$(echo $(lesson $XII1 1 3) $(lesson $XII1 1 4) $(lesson $XII1 2 4) $(lesson $XII1 3 6))"
+check "XII-2, Thursday 1st and 6th: Orientim në karrierë"    "Karrierë/26 Karrierë/26" "$(echo $(lesson $XII2 4 1) $(lesson $XII2 4 6))"
+check "…Tuesday 5th and 6th: Matematikë"                     "Mat./26 Mat./26" "$(echo $(lesson $XII2 2 5) $(lesson $XII2 2 6))"
+check "an XII-1 student's timetable"                         "200" "$(code $S '/nxenesi/orari?tani=2026-10-01T09:00')"
+contains "…shows Orientim në karrierë with Enver Bajrami"    "$T/body" "Orientim në karrierë"
+contains "…and says the timetable changed"                    "$T/body" "Orari i klasës suaj ndryshoi"
+# A correction in the class editor stays: swap Monday 3rd (Matematikë) with Thursday 2nd (Orientim në karrierë)
+SQL "UPDATE schedule_entries a JOIN schedule_entries b ON b.class_id = a.class_id AND b.day_of_week = 4 AND b.period_number = 2
+        SET a.class_subject_id = b.class_subject_id, b.class_subject_id = a.class_subject_id
+      WHERE a.class_id = $XII1 AND a.day_of_week = 1 AND a.period_number = 3"
+check "…(swapped in the class editor)"                        "Karrierë/26 Mat./26" "$(echo $(lesson $XII1 1 3) $(lesson $XII1 4 2))"
+code $A '/admin/orari/numrat?ndrrimi=1' >/dev/null
+contains "a correction in the class editor is kept"          "$T/body" "Orientim në karrierë: e hënë, ora 3; e enjte, ora 4."
+check "…XII-1 is still in the timetable, nothing to apply"   "0" "$(grep -c 'Gati për t’u aplikuar' $T/body)"
 
 echo; echo "== Activity log =="
 check "saving and applying are logged"                       "2" "$(SQL "SELECT COUNT(DISTINCT action) FROM activity_log WHERE id > $LOG_START AND action IN ('schedule.sheet_updated','schedule.sheet_applied')")"

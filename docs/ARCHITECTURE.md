@@ -215,7 +215,7 @@ Each session has a token (`random_bytes(32)`). Every form carries it as a hidden
 
 ## 7. Database design
 
-36 tables, verified by importing into MariaDB and running 28 negative tests (§7.4, `tests/database_test.sh`).
+36 tables, verified by importing into MariaDB and running 29 negative tests (§7.4, `tests/database_test.sh`).
 
 ### 7.1 Core relationships
 
@@ -293,6 +293,9 @@ erDiagram
     - So it can be entered and checked before the system knows who teaches what.
     - `ScheduleSheetService` reads a number in a class as the subject of that class the teacher teaches (the subject the class has given them, else one of their own subjects, never one another teacher of the class has). A class whose numbers can all be read that way can be applied.
     - Applying replaces the class's `schedule_entries` and sets its subjects' teachers. Students and teachers only ever see `schedule_entries`.
+18. **Electives take the place of a curriculum subject.** *Mësim zgjedhor* is a slot in the curriculum (2 lessons a week). Each class fills it with an elective such as *Orientim në karrierë*, which students see by its own name.
+    - `subjects.fills_subject_id` marks a subject as an elective and names the subject it stands in for. An elective has no curriculum rows of its own; a class that takes it gets the curriculum hours of that subject.
+    - A class switches its row in place (`class_subjects.subject_id`), so the row's teacher, lessons and marks stay with it. The curriculum then no longer adds *Mësim zgjedhor* to that class.
 
 ### 7.4 Verified behaviour
 
@@ -318,6 +321,7 @@ Each of these statements is run against a throwaway copy of the schema by `tests
 - a class-subject with 13 lessons a week; a teaching norm of 0
 - two teachers in the same duty place; a teacher on duty twice on the same day and shift; deleting a duty post still in use; a duty post with no places
 - two numbers in the same slot of the timetable in numbers; the number 0 there
+- an elective in place of a subject that does not exist
 
 Removing a teacher correctly un-assigned them and kept all marks. A subject that is only in the curriculum can be deleted (its curriculum rows go with it).
 
@@ -414,7 +418,9 @@ Removing a teacher correctly un-assigned them and kept all marks. A subject that
 - **Applying.** A number becomes a subject once the system knows what the teacher teaches (*Lëndët që jep* on their page). The one exception is a subject the admin has given that teacher in the class, which comes first.
   - A class is ready when every number in it is a subject.
   - Applying makes the sheet the timetable of the ready classes: their subjects get the sheet's teachers and their students are notified.
-  - A teacher with two subjects in a class gets both. The first subject takes the teacher's first lessons of the week, and this is flagged for checking in the class editor.
+  - A teacher with two subjects in a class gets both, and the note under *Për t’u kontrolluar* says which lessons went where:
+    - each smaller subject takes the last day of the week on which the teacher has exactly that many lessons with the class, or else the teacher's last lessons of the week; the main subject takes the rest (26 in XII-1 and XII-2: Orientim në karrierë on Thursday, as the school said);
+    - if the class's timetable already splits them another way (a correction made in the class editor), that is kept.
 
 **Shifts.** Each class belongs to one shift, and lesson times come from that shift's bell schedule. If classes switch shifts during the year (e.g. per semester), the admin only changes the class's shift: the timetable keeps its periods and the times follow automatically.
 
@@ -540,10 +546,10 @@ URLs are Albanian (without diacritics); code identifiers are English.
 | `/admin/fletet-e-hyrjes/{id}` | the printable slips (this admin's session only, 30 minutes) |
 | `/admin/vitet-shkollore` (+ `/shto`, `/{id}/ndrysho`, POST `/{id}/aktual`) | school years & semesters, the current year |
 | `/admin/plani-mesimor` · `/admin/plani-mesimor/{grade}` | the curriculum: grades, their subjects and weekly hours, default shift |
-| `/admin/lendet` (+ `/shto`, `/{id}/ndrysho`) | subjects and the grades that study them |
+| `/admin/lendet` (+ `/shto`, `/{id}/ndrysho`) | subjects and the grades that study them; electives and the subject they stand in for |
 | `/admin/sallat` (+ `/{id}/ndrysho`) | rooms |
 | `/admin/klasat` (+ `/shto`, `/{id}/ndrysho`) | classes |
-| `/admin/klasat/{id}` (+ POST `/lendet`, `/lendet/shto`, `/lendet/hiq`) | one class: who teaches each subject and how many hours, its students |
+| `/admin/klasat/{id}` (+ POST `/lendet`, `/lendet/shto`, `/lendet/hiq`) | one class: who teaches each subject and how many hours, which elective it takes, its students |
 | `/admin/orari?ndrrimi=1\|2&shfaq=lendet\|mesimdhenesit` | the whole-school sheet per shift (subjects or teacher numbers), printable |
 | `/admin/orari/klasa/{id}` | one class's week: the timetable builder |
 | `/admin/orari/oret` (POST `/{shift}`) | bell schedule of both shifts |
@@ -722,6 +728,7 @@ Every module has a designed empty state in plain Albanian — e.g. *"Nuk keni de
 | Achievements | Arritjet | Programmes | Programet |
 | Save · Cancel · Edit · Delete | Ruaj · Anulo · Ndrysho · Fshij | Upload · Download | Ngarko · Shkarko |
 | Active · Inactive | Aktiv · Joaktiv | Search | Kërko |
+| Elective (subject) | Lëndë zgjedhore | Elective lessons (the curriculum slot) | Mësim zgjedhor |
 
 Grade words: 5 Shkëlqyeshëm · 4 Shumë mirë · 3 Mirë · 2 Mjaftueshëm · 1 Pamjaftueshëm.
 Days: e hënë, e martë, e mërkurë, e enjte, e premte.
@@ -805,7 +812,7 @@ Greeting by hour: Mirëmëngjes (< 12:00) · Mirëdita (< 18:00) · Mirëmbrëma
     - Number 52 is empty. 74–76 are marked "mz", which means *Mësim zgjedhor* (the elective lessons); no teacher is named for them.
     - 53 is Besarta Ajeti (the timetable spells it "Besata").
     - A full teaching norm is **20 lessons a week**; part-time teachers have fewer (`teacher_profiles.weekly_norm`).
-    - Subjects known so far: 26 (Enver Bajrami) teaches Matematikë in XII-1 and XII-2 and career orientation, the elective (*Mësim zgjedhor*), in XII-1, XII-2, XII-5, XII-8, XII-9 and XII-10.
+    - Subjects known so far: 26 (Enver Bajrami) teaches Matematikë in XII-1 and XII-2, and *Orientim në karrierë* in XII-1, XII-2, XII-5, XII-8, XII-9 and XII-10. That elective takes the place of *Mësim zgjedhor* in those classes (§7.3, decision 18), and in XII-1 and XII-2 its lessons are the two on Thursday.
 11. **Daily duty** (*Kujdestaria e ditës*), from the bottom of the morning timetable. Each school day one teacher keeps watch in the hall (*Salla*) and two on each of the three floors. Some places are empty on the sheet. Every teacher on the morning roster teaches that morning.
 12. **School details** (from the school's letterhead, 27 Sep 2026), in `settings`: Rruga “Fatmir Hasani” nr. 14, 70000 Ferizaj · +383 49 923 828 · imersion7@gmail.com · principal (*drejtori*) Bajram Rexhepi. They appear in the public site's top bar and footer.
 13. **Git history is kept as it is.** The timetable photo removed from the repository stays in the history of earlier commits; the history is not rewritten.

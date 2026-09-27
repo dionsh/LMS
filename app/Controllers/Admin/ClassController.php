@@ -145,6 +145,9 @@ final class ClassController extends AdminController
         $teacherIds = array_map('intval', array_column(User::teacherOptions($this->assignedTeachers($subjects)), 'id'));
         $teachers = $this->request->keyed('teacher');
         $hours = $this->request->keyed('hours');
+        $chosen = $this->request->keyed('subject');
+        $choices = Subject::electiveChoices();
+        $present = array_map('intval', array_column($subjects, 'subject_id'));
 
         $rows = [];
         $errors = [];
@@ -152,6 +155,20 @@ final class ClassController extends AdminController
             $csId = (int) $subject['id'];
             $teacher = $teachers[$csId] ?? '';
             $weekly = $hours[$csId] ?? '';
+
+            // A subject with electives: which one the class takes (Mësim zgjedhor or Orientim në karrierë …)
+            $subjectId = (int) $subject['subject_id'];
+            $place = (int) ($subject['fills_subject_id'] ?? $subjectId);
+            $choice = $chosen[$csId] ?? '';
+            if ($choice !== '' && isset($choices[$place]) && $choice !== (string) $subjectId) {
+                if (!ctype_digit($choice) || !isset($choices[$place][(int) $choice])) {
+                    $errors['subject-' . $csId] = 'Zgjidhni lëndën nga lista.';
+                } elseif (in_array((int) $choice, $present, true)) {
+                    $errors['subject-' . $csId] = 'Klasa e ka tashmë këtë lëndë.';
+                } else {
+                    $subjectId = (int) $choice;
+                }
+            }
 
             if ($teacher !== '' && !(ctype_digit($teacher) && in_array((int) $teacher, $teacherIds, true))) {
                 $errors['teacher-' . $csId] = 'Zgjidhni mësimdhënësin nga lista.';
@@ -161,13 +178,14 @@ final class ClassController extends AdminController
             }
 
             $rows[$csId] = [
+                'subject_id'   => $subjectId !== (int) $subject['subject_id'] ? $subjectId : null,
                 'teacher_id'   => $teacher !== '' && ctype_digit($teacher) ? (int) $teacher : null,
                 'weekly_hours' => WeeklyHours::valid($weekly) ? WeeklyHours::parse($weekly) : null,
             ];
         }
 
         if ($errors !== []) {
-            return $this->detail($class, ['teacher' => $teachers, 'hours' => $hours], $errors, 422);
+            return $this->detail($class, ['subject' => $chosen, 'teacher' => $teachers, 'hours' => $hours], $errors, 422);
         }
 
         Structure::saveClassSubjects($class, $rows, (int) Auth::id());
@@ -245,7 +263,8 @@ final class ClassController extends AdminController
             'subjects'  => $subjects,
             'teachers'  => User::teacherOptions($this->assignedTeachers($subjects), (int) $class['academic_year_id']),
             'students'  => SchoolClass::students($id),
-            'addable'   => array_values(array_filter(Subject::options(true), static fn (array $s): bool => !in_array((int) $s['id'], $taken, true))),
+            'addable'   => array_values(array_filter(Subject::options(true), static fn (array $s): bool => $s['fills_subject_id'] === null && !in_array((int) $s['id'], $taken, true))),
+            'choices'   => Subject::electiveChoices(),
             'posted'    => $posted,
             'errors'    => $errors,
         ], 'classes', $status);

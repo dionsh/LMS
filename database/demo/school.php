@@ -190,6 +190,23 @@ Database::transaction(static function () use ($data, $staff, $duty, $morning, $y
     }
     ClassSubject::addFromCurriculum($yearId);
 
+    // …and the elective some classes take in place of Mësim zgjedhor (same lessons and teacher slot)
+    $subjectRows = array_column(Subject::options(), null, 'name');
+    foreach ($data['electives'] as $name => $classList) {
+        $elective = $subjectRows[$name];
+        foreach ($classList as [$grade, $section]) {
+            foreach (ClassSubject::forClass($classes[$grade][$section]) as $row) {
+                if ((int) $row['subject_id'] !== (int) $elective['fills_subject_id']) {
+                    continue;
+                }
+                ClassSubject::setSubject((int) $row['id'], (int) $elective['id']);
+                if ($row['teacher_id'] !== null && $row['teacher_first_name'] === 'Demo') {
+                    TeacherSubject::add((int) $row['teacher_id'], (int) $elective['id']);   // the demo teacher keeps it
+                }
+            }
+        }
+    }
+
     // 2. The school's teachers with their timetable numbers (and subjects, once known)
     $byNumber = [];
     foreach ($staff as $number => [$first, $last, $subjects]) {

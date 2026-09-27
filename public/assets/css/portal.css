@@ -522,6 +522,16 @@
 
 /* Admin: a class's subjects and who teaches them */
 .assign-table__teacher { min-width: 15rem; min-height: 2.75rem; padding-block: .5rem; font-size: var(--text-sm); }
+.assign-table__subject { min-width: 12rem; min-height: 2.75rem; padding-block: .5rem; font-size: var(--text-sm); font-weight: 700; }
+
+.assign-table__choice { display: grid; gap: .25rem; justify-items: start; }
+
+/* Stacked on phones: the lists fit the row instead of widening the table past the screen */
+@media (max-width: 40rem) {
+    .assign-table__teacher,
+    .assign-table__subject { min-width: 0; width: 100%; max-width: 16rem; }
+    .assign-table__choice { flex: 0 1 16rem; justify-items: end; }
+}
 .assign-hint { margin-top: var(--space-3); }
 
 .assign-extra {

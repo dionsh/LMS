@@ -118,6 +118,11 @@ INSERT INTO subjects (name, short_name, sort_order) VALUES
   ('Psikologji',     'Psik.',    16),
   ('Astronomi',      'Astr.',    17);
 
+-- Electives: a class that chooses one takes it in place of Mësim zgjedhor,
+-- with the same lessons a week. Which classes choose it is set per class.
+INSERT INTO subjects (name, short_name, sort_order, fills_subject_id)
+SELECT 'Orientim në karrierë', 'Karrierë', 18, id FROM subjects WHERE name = 'Mësim zgjedhor';
+
 -- ---------------------------------------------------------------------
 -- Curriculum (plani mësimor, given by the school, 27 Sep 2026): the
 -- subjects of each grade and their lessons a week. Every grade has 30

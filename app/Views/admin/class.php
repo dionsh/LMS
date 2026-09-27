@@ -7,7 +7,8 @@
  * @var list<array> $teachers User::teacherOptions()
  * @var list<array> $students SchoolClass::students()
  * @var list<array> $addable  active subjects the class does not have
- * @var array $posted         ['teacher' => [csId => id], 'hours' => [csId => n]] after a failed save
+ * @var array $choices        Subject::electiveChoices(): a subject and the electives that can take its place
+ * @var array $posted         ['subject' => …, 'teacher' => [csId => id], 'hours' => [csId => n]] after a failed save
  * @var array $errors
  */
 
@@ -102,7 +103,25 @@ foreach ($subjects as $subject) {
                             ?>
                             <tr>
                                 <td data-label="Lënda">
-                                    <span class="table__primary"><?= e($subject['subject_name']) ?></span>
+                                    <?php
+                                    $place = (int) ($subject['fills_subject_id'] ?? $subject['subject_id']);
+                                    $options = isset($choices[$place]) ? $choices[$place] + [(int) $subject['subject_id'] => $subject['subject_name']] : [];
+                                    $chosen = $posted['subject'][$csId] ?? (string) $subject['subject_id'];
+                                    ?>
+                                    <?php if ($options !== []): ?>
+                                        <span class="assign-table__choice">
+                                        <label class="visually-hidden" for="subject-<?= e($csId) ?>">Lënda (zgjedhore)</label>
+                                        <select class="select assign-table__subject" id="subject-<?= e($csId) ?>" name="subject[<?= e($csId) ?>]"<?= field_invalid($errors, 'subject-' . $csId) ?>>
+                                            <?php foreach ($options as $optionId => $optionName): ?>
+                                                <option value="<?= e($optionId) ?>"<?= (string) $optionId === $chosen ? ' selected' : '' ?>><?= e($optionName) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <span class="table__secondary">Lëndë zgjedhore</span>
+                                        <?= field_error($errors, 'subject-' . $csId) ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="table__primary"><?= e($subject['subject_name']) ?></span>
+                                    <?php endif; ?>
                                     <?php if ((int) $subject['in_curriculum'] === 0): ?><span class="table__secondary">Jashtë planit mësimor</span><?php endif; ?>
                                 </td>
                                 <td data-label="Mësimdhënësi">

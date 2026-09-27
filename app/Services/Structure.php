@@ -148,14 +148,18 @@ final class Structure
     }
 
     /**
-     * Save who teaches each subject of a class and the class's own weekly hours.
+     * Save who teaches each subject of a class, the class's own weekly hours, and
+     * which elective it takes (subject_id: the new subject, null = unchanged).
      *
-     * @param array<int, array{teacher_id: ?int, weekly_hours: ?int}> $rows class-subject id => values
+     * @param array<int, array{subject_id: ?int, teacher_id: ?int, weekly_hours: ?int}> $rows class-subject id => values
      */
     public static function saveClassSubjects(array $class, array $rows, int $adminId): void
     {
         Database::transaction(static function () use ($class, $rows, $adminId): void {
             foreach ($rows as $id => $row) {
+                if (($row['subject_id'] ?? null) !== null) {
+                    ClassSubject::setSubject($id, $row['subject_id']);
+                }
                 ClassSubject::update($id, $row['teacher_id'], $row['weekly_hours']);
             }
 

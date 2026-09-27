@@ -44,7 +44,7 @@ return [
     23 => ['Muzafer', 'Hafizi', []],
     24 => ['Lindrit', 'Rysha', []],
     25 => ['Avni', 'Hashani', []],
-    26 => ['Enver', 'Bajrami', ['Matematikë', 'Mësim zgjedhor']],  // Mësim zgjedhor here is career orientation
+    26 => ['Enver', 'Bajrami', ['Matematikë', 'Orientim në karrierë']],
     27 => ['Naser', 'Tahiri', []],
     28 => ['Fedona', 'Beqiri', []],
     29 => ['Minire', 'Kurteshi', []],
